@@ -5,25 +5,30 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"os"
 )
 
 // --- This is where you define your allowed commands ---
 // This is a CRITICAL security step.
 var ALLOWED_COMMANDS = map[string][]string{
-	"update":       {"sudo", "pacman", "-Syu"},
-	"list_home":    {"ls", "-l", "/home/swap/"},
-	"status":       {"git", "status"},
-	"open_firefox": {"firefox", "--new-window"},
-	"open_edge":    {"microsoft-edge-beta"},
-	"open_vscode":  {"code-insiders"},
-	"open_postman": {"postman"},
+	"update":        {"sudo", "pacman", "-Syu"},
+	"list_home":     {"ls", "-l", "/home/swap/"},
+	"status":        {"git", "status"},
+	"open_firefox":  {"firefox", "--new-window"},
+	"open_edge":     {"microsoft-edge-beta"},
+	"open_vscode":   {"code-insiders"},
+	"open_postman":  {"postman"},
+	"player_play":   {"playerctl", "play"},
+	"player_pause":  {"playerctl", "pause"},
+	"player_next":   {"playerctl", "next"},
+	"player_prev":   {"playerctl", "previous"},
+	"player_toggle": {"playerctl", "play-pause"},
 }
 
 // This upgrades our HTTP connection to a WebSocket connection
@@ -114,6 +119,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			if msg.Command == "play" || msg.Command == "pause" || msg.Command == "play-pause" || msg.Command == "next" || msg.Command == "previous" {
+				output, err := playerCtrl(msg.Command)
+				if err != nil {
+					log.Printf("playerctl command failed: %v", err)
+					response = ServerResponse{
+						Status:  "error",
+						Message: err.Error(),
+					}
+				} else {
+					response = ServerResponse{
+						Status:  "success",
+						Command: msg.Command,
+						Output:  output,
+					}
+				}
+				messages <- response
+				continue
+			}
+
 			// Check if the command is in our allow-list
 			if commandToRun, ok := ALLOWED_COMMANDS[msg.Command]; ok {
 				log.Printf("Running command: %v", commandToRun)
@@ -195,6 +219,18 @@ func getPlayerInfo() (string, string, error) {
 	}
 	// log.Println("Current player info Update :", info)
 	return info, artwork, nil
+}
+
+func playerCtrl(command string) (string, error) {
+	if command != "play" && command != "pause" && command != "play-pause" && command != "next" && command != "previous" {
+		return "", nil
+	}
+	cmd := exec.Command("playerctl", command)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 // fileURLToDataURI converts a file:// URL to a base64 data URI that browsers can display
