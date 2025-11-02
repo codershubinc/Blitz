@@ -185,6 +185,7 @@ func getPlayerInfo() (string, string, error) {
 	if status != "" {
 		info = info + " — " + status
 	}
+	// log.Println("Current player info Update :", info)
 	return info, artwork, nil
 }
 
