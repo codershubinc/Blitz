@@ -1,21 +1,24 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"os"
 )
 
 // --- This is where you define your allowed commands ---
 // This is a CRITICAL security step.
 var ALLOWED_COMMANDS = map[string][]string{
 	"update":       {"sudo", "pacman", "-Syu"},
-	"list_home":    {"ls", "-l", "/home/swap/"}, 
+	"list_home":    {"ls", "-l", "/home/swap/"},
 	"status":       {"git", "status"},
 	"open_firefox": {"firefox", "--new-window"},
 	"open_edge":    {"microsoft-edge-beta"},
@@ -26,7 +29,7 @@ var ALLOWED_COMMANDS = map[string][]string{
 // This upgrades our HTTP connection to a WebSocket connection
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true  
+		return true
 	},
 }
 
@@ -168,6 +171,11 @@ func getPlayerInfo() (string, string, error) {
 	outArtwork, _ := artworkCmd.Output()
 	artwork := strings.TrimSpace(string(outArtwork))
 
+	// Convert file:// URLs to data URIs so browsers can display them
+	if artwork != "" {
+		artwork = fileURLToDataURI(artwork)
+	}
+
 	if errMeta != nil && errStatus != nil {
 		// Return combined error message if both fail
 		return "playerctl not available or no player running", "", errMeta
@@ -187,6 +195,43 @@ func getPlayerInfo() (string, string, error) {
 	}
 	// log.Println("Current player info Update :", info)
 	return info, artwork, nil
+}
+
+// fileURLToDataURI converts a file:// URL to a base64 data URI that browsers can display
+func fileURLToDataURI(fileURL string) string {
+	if !strings.HasPrefix(fileURL, "file://") {
+		return fileURL
+	}
+
+	// Remove file:// prefix if present
+	filePath := strings.TrimPrefix(fileURL, "file://")
+
+	// Read the file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Printf("Failed to read artwork file: %v", err)
+		return "" // Return empty string on error
+	}
+
+	// Detect MIME type based on file extension
+	mimeType := "image/jpeg" // default
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".png":
+		mimeType = "image/png"
+	case ".jpg", ".jpeg":
+		mimeType = "image/jpeg"
+	case ".gif":
+		mimeType = "image/gif"
+	case ".webp":
+		mimeType = "image/webp"
+	}
+
+	// Encode to base64
+	encoded := base64.StdEncoding.EncodeToString(data)
+
+	// Return as data URI
+	return "data:" + mimeType + ";base64," + encoded
 }
 
 func main() {
