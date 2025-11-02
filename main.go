@@ -15,7 +15,7 @@ import (
 // This is a CRITICAL security step.
 var ALLOWED_COMMANDS = map[string][]string{
 	"update":       {"sudo", "pacman", "-Syu"},
-	"list_home":    {"ls", "-l", "/home/swap/"}, // Make sure this path is correct for you
+	"list_home":    {"ls", "-l", "/home/swap/"}, 
 	"status":       {"git", "status"},
 	"open_firefox": {"firefox", "--new-window"},
 	"open_edge":    {"microsoft-edge-beta"},
@@ -26,11 +26,10 @@ var ALLOWED_COMMANDS = map[string][]string{
 // This upgrades our HTTP connection to a WebSocket connection
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all connections (not for production!)
+		return true  
 	},
 }
 
-// Define the message structures for JSON
 type ClientMessage struct {
 	Command string `json:"command"`
 }
