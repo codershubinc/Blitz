@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blitz ⚡</title>
+    <style>
+        /* --- Base Styles --- */
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-light: #16213e;
+            --accent-primary: #0f3460;
+            --accent-secondary: #e94560;
+            --text-light: #e0e0e0;
+            --text-dark: #a0a0a0;
+            --status-connected: #2ecc71;
+            --status-disconnected: #e74c3c;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            margin: 20px;
+            padding: 25px;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        /* --- Connection Area --- */
+        .connection-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #ipAddress {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 1em;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--accent-primary);
+            color: var(--text-light);
+            border-radius: 8px;
+        }
+
+        #connectButton {
+            padding: 12px 15px;
+            font-size: 1em;
+            font-weight: 600;
+            background-color: var(--accent-primary);
+            color: var(--text-light);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #connectButton:hover {
+            background-color: #1a5fb4;
+            /* A lighter blue */
+        }
+
+        #connectButton:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        #status {
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .connected {
+            color: var(--status-connected);
+        }
+
+        .disconnected {
+            color: var(--status-disconnected);
+        }
+
+        /* --- Remote Grid --- */
+        #remote-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 2 columns */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .remote-btn {
+            padding: 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            background-color: var(--accent-primary);
+            color: var(--text-light);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .remote-btn:hover {
+            background-color: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.2);
+        }
+
+        .remote-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* --- Output Area --- */
+        h3 {
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        #output {
+            background-color: #111;
+            border: 1px solid var(--accent-primary);
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            color: #f0f0f0;
+        }
+
+        /* --- Music Player --- */
+        .player-info {
+            background-color: var(--accent-primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid var(--accent-secondary);
+        }
+
+        .player-info h3 {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .player-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .album-art {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .album-art.visible {
+            display: block;
+        }
+
+        .player-info .track {
+            color: var(--text-light);
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: var(--font-main);
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>⚡ Blitz Remote</h1>
+
+        <div class="connection-area">
+            <input type="text" id="ipAddress" placeholder="Enter PC IP (e.g., 192.168.1.10)">
+            <button id="connectButton">Connect</button>
+        </div>
+
+        <p id="status" class="disconnected">Status: Not Connected</p>
+
+        <div class="player-info">
+            <h3>🎵 Now Playing</h3>
+            <div class="player-content">
+                <img id="albumArt" class="album-art" alt="Album artwork">
+                <div class="track" id="playerInfo">No music info yet...</div>
+            </div>
+        </div>
+
+        <div id="remote-grid">
+            <button class="remote-btn" onclick="sendCommand('update')">🚀 System Update</button>
+            <button class="remote-btn" onclick="sendCommand('list_home')">📂 List Home</button>
+            <button class="remote-btn" onclick="sendCommand('status')">Git Status</button>
+            <button class="remote-btn" onclick="sendCommand('open_firefox')">🔥 Open Firefox</button>
+            <button class="remote-btn" onclick="sendCommand('open_vscode')">🖥️ Open VSCode</button>
+            <button class="remote-btn" onclick="sendCommand('open_edge')">🌐 Open Edge</button>
+            <button class="remote-btn" onclick="sendCommand('open_postman')">📬 Open Postman</button>
+        </div>
+
+        <h3>Output Log:</h3>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        let ws = null;
+        const statusEl = document.getElementById("status");
+        const outputEl = document.getElementById("output");
+        const ipInput = document.getElementById("ipAddress");
+        const connectBtn = document.getElementById("connectButton");
+
+        function connect() {
+            const ip = ipInput.value.trim();
+            const port = 8765;
+
+            if (!ip) {
+                outputEl.textContent = "Please enter an IP address.";
+                return;
+            }
+
+            if (ws) {
+                ws.close();
+            }
+
+            statusEl.textContent = "Connecting...";
+            statusEl.className = "";
+            connectBtn.disabled = true;
+            ipInput.disabled = true;
+
+            ws = new WebSocket(`ws://${ip}:${port}/ws`);
+
+            ws.onopen = () => {
+                console.log("Connected to WebSocket server");
+                statusEl.textContent = "Status: Connected";
+                statusEl.className = "connected";
+            };
+
+            ws.onmessage = (event) => {
+                console.log("Message from server:", event.data);
+                let data = JSON.parse(event.data);
+
+                if (data.status === 'player') {
+                    // Update the player info display
+                    const playerInfoEl = document.getElementById('playerInfo');
+                    const albumArtEl = document.getElementById('albumArt');
+                    
+                    playerInfoEl.textContent = data.output || 'No music playing';
+                    
+                    // Update album artwork if available
+                    if (data.artwork && data.artwork !== '') {
+                        albumArtEl.src = data.artwork;
+                        albumArtEl.classList.add('visible');
+                    } else {
+                        albumArtEl.classList.remove('visible');
+                    }
+                } else if (data.status === 'success') {
+                    outputEl.textContent = data.output;
+                } else {
+                    outputEl.textContent = `Error: ${data.message}\n\n${data.output || ''}`;
+                }
+            };
+
+            ws.onclose = () => {
+                console.log("Disconnected from WebSocket server");
+                statusEl.textContent = "Status: Disconnected";
+                statusEl.className = "disconnected";
+                connectBtn.disabled = false;
+                ipInput.disabled = false;
+                ws = null;
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket Error:", error);
+                statusEl.textContent = "Status: Error (Check IP/Firewall)";
+                statusEl.className = "disconnected";
+                connectBtn.disabled = false;
+                ipInput.disabled = false;
+                ws = null;
+            };
+        }
+
+        function sendCommand(commandName) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = {
+                    command: commandName
+                };
+                ws.send(JSON.stringify(message));
+                outputEl.textContent = `Sent command: ${commandName}...`;
+            } else {
+                outputEl.textContent = "Not connected. Please connect first.";
+            }
+        }
+
+        // Add event listeners
+        connectBtn.addEventListener('click', connect);
+        ipInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                connect();
+            }
+        });
+
+    </script>
+</body>
+
+</html>
