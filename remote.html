@@ -94,6 +94,7 @@
             text-align: center;
             margin-bottom: 25px;
             font-weight: 600;
+            transition: color 0.3s ease, transform 0.2s ease;
         }
 
         .connected {
@@ -156,6 +157,7 @@
             font-family: var(--font-mono);
             font-size: 0.9em;
             color: #f0f0f0;
+            transition: opacity 0.2s ease;
         }
 
         /* --- Music Player --- */
@@ -188,10 +190,21 @@
             object-fit: cover;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             display: none;
+            transition: opacity 0.5s ease-in-out, transform 0.3s ease;
+            opacity: 0;
         }
 
         .album-art.visible {
             display: block;
+            opacity: 1;
+        }
+
+        .album-art.fade-out {
+            opacity: 0;
+        }
+
+        .album-art:hover {
+            transform: scale(1.05);
         }
 
         .player-info .track {
@@ -200,6 +213,158 @@
             font-weight: 600;
             font-family: var(--font-main);
             flex: 1;
+            transition: opacity 0.3s ease-in-out;
+            min-height: 20px;
+        }
+
+        .track.hidden {
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Skeleton Loading --- */
+        @keyframes shimmer {
+            0% {
+                background-position: -468px 0;
+            }
+
+            100% {
+                background-position: 468px 0;
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0.05) 0%,
+                    rgba(255, 255, 255, 0.15) 50%,
+                    rgba(255, 255, 255, 0.05) 100%);
+            background-size: 468px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-artwork {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .skeleton-artwork.active {
+            display: block;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            width: 200px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .skeleton-text.active {
+            display: block;
+        }
+
+        .skeleton-text-small {
+            height: 16px;
+            width: 150px;
+            margin: 8px auto 0;
+            display: none;
+        }
+
+        .skeleton-text-small.active {
+            display: block;
+        }
+
+        .player-info {
+            background-color: var(--accent-primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid var(--accent-secondary);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .player-info:hover {
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.3);
+        }
+
+        /* --- Responsive Layout for Tablets and Larger --- */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+            }
+
+            .main-content {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .music-section {
+                flex: 0 0 300px;
+                position: sticky;
+                top: 20px;
+            }
+
+            .controls-section {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .player-info {
+                margin-bottom: 0;
+            }
+
+            .player-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .album-art {
+                width: 200px;
+                height: 200px;
+            }
+
+            .player-info .track {
+                font-size: 1em;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 1100px;
+            }
+
+            .music-section {
+                flex: 0 0 350px;
+            }
+
+            .album-art {
+                width: 250px;
+                height: 250px;
+            }
+
+            .player-info .track {
+                font-size: 1.1em;
+            }
         }
     </style>
 </head>
@@ -216,26 +381,37 @@
 
         <p id="status" class="disconnected">Status: Not Connected</p>
 
-        <div class="player-info">
-            <h3>🎵 Now Playing</h3>
-            <div class="player-content">
-                <img id="albumArt" class="album-art" alt="Album artwork">
-                <div class="track" id="playerInfo">No music info yet...</div>
+        <div class="main-content">
+            <div class="music-section">
+                <div class="player-info">
+                    <h3>🎵 Now Playing</h3>
+                    <div class="player-content">
+                        <div class="skeleton skeleton-artwork" id="skeletonArt"></div>
+                        <img id="albumArt" class="album-art" alt="Album artwork">
+                        <div>
+                            <div class="skeleton skeleton-text" id="skeletonText"></div>
+                            <div class="skeleton skeleton-text-small" id="skeletonTextSmall"></div>
+                            <div class="track" id="playerInfo">Waiting for connection...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div id="remote-grid">
+                    <button class="remote-btn" onclick="sendCommand('update')">🚀 System Update</button>
+                    <button class="remote-btn" onclick="sendCommand('list_home')">📂 List Home</button>
+                    <button class="remote-btn" onclick="sendCommand('status')">Git Status</button>
+                    <button class="remote-btn" onclick="sendCommand('open_firefox')">🔥 Open Firefox</button>
+                    <button class="remote-btn" onclick="sendCommand('open_vscode')">🖥️ Open VSCode</button>
+                    <button class="remote-btn" onclick="sendCommand('open_edge')">🌐 Open Edge</button>
+                    <button class="remote-btn" onclick="sendCommand('open_postman')">📬 Open Postman</button>
+                </div>
+
+                <h3>Output Log:</h3>
+                <pre id="output"></pre>
             </div>
         </div>
-
-        <div id="remote-grid">
-            <button class="remote-btn" onclick="sendCommand('update')">🚀 System Update</button>
-            <button class="remote-btn" onclick="sendCommand('list_home')">📂 List Home</button>
-            <button class="remote-btn" onclick="sendCommand('status')">Git Status</button>
-            <button class="remote-btn" onclick="sendCommand('open_firefox')">🔥 Open Firefox</button>
-            <button class="remote-btn" onclick="sendCommand('open_vscode')">🖥️ Open VSCode</button>
-            <button class="remote-btn" onclick="sendCommand('open_edge')">🌐 Open Edge</button>
-            <button class="remote-btn" onclick="sendCommand('open_postman')">📬 Open Postman</button>
-        </div>
-
-        <h3>Output Log:</h3>
-        <pre id="output"></pre>
     </div>
 
     <script>
@@ -269,6 +445,9 @@
                 console.log("Connected to WebSocket server");
                 statusEl.textContent = "Status: Connected";
                 statusEl.className = "connected";
+
+                // Show skeleton while waiting for first update
+                showSkeleton();
             };
 
             ws.onmessage = (event) => {
@@ -276,18 +455,46 @@
                 let data = JSON.parse(event.data);
 
                 if (data.status === 'player') {
+                    // Hide skeleton on first data
+                    hideSkeleton();
+
                     // Update the player info display
                     const playerInfoEl = document.getElementById('playerInfo');
                     const albumArtEl = document.getElementById('albumArt');
 
-                    playerInfoEl.textContent = data.output || 'No music playing';
+                    // Check if content actually changed
+                    const textChanged = playerInfoEl.textContent !== (data.output || 'No music playing');
+                    const artworkChanged = albumArtEl.src !== data.artwork;
 
-                    // Update album artwork if available
+                    // Update text
+                    if (textChanged) {
+                        playerInfoEl.textContent = data.output || 'No music playing';
+                    }
+
+                    // Smooth artwork transition
                     if (data.artwork && data.artwork !== '') {
-                        albumArtEl.src = data.artwork;
-                        albumArtEl.classList.add('visible');
+                        if (artworkChanged) {
+                            // Fade out old image
+                            albumArtEl.classList.add('fade-out');
+
+                            setTimeout(() => {
+                                albumArtEl.src = data.artwork;
+                                albumArtEl.classList.remove('fade-out');
+                                albumArtEl.classList.add('visible');
+                            }, 250);
+                        } else if (!albumArtEl.classList.contains('visible')) {
+                            // First time showing artwork
+                            albumArtEl.src = data.artwork;
+                            albumArtEl.classList.add('visible');
+                        }
                     } else {
-                        albumArtEl.classList.remove('visible');
+                        // Fade out and hide artwork
+                        if (albumArtEl.classList.contains('visible')) {
+                            albumArtEl.classList.add('fade-out');
+                            setTimeout(() => {
+                                albumArtEl.classList.remove('visible', 'fade-out');
+                            }, 500);
+                        }
                     }
                 } else if (data.status === 'success') {
                     outputEl.textContent = data.output;
@@ -334,6 +541,22 @@
                 connect();
             }
         });
+
+        // Skeleton helper functions
+        function showSkeleton() {
+            document.getElementById('skeletonArt').classList.add('active');
+            document.getElementById('skeletonText').classList.add('active');
+            document.getElementById('skeletonTextSmall').classList.add('active');
+            document.getElementById('playerInfo').classList.add('hidden');
+            document.getElementById('albumArt').classList.remove('visible');
+        }
+
+        function hideSkeleton() {
+            document.getElementById('skeletonArt').classList.remove('active');
+            document.getElementById('skeletonText').classList.remove('active');
+            document.getElementById('skeletonTextSmall').classList.remove('active');
+            document.getElementById('playerInfo').classList.remove('hidden');
+        }
 
     </script>
 </body>
