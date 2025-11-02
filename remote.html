@@ -279,9 +279,9 @@
                     // Update the player info display
                     const playerInfoEl = document.getElementById('playerInfo');
                     const albumArtEl = document.getElementById('albumArt');
-                    
+
                     playerInfoEl.textContent = data.output || 'No music playing';
-                    
+
                     // Update album artwork if available
                     if (data.artwork && data.artwork !== '') {
                         albumArtEl.src = data.artwork;
