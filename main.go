@@ -1,15 +1,14 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"Blitz/integration/utils"
 
 	"github.com/gorilla/websocket"
 )
@@ -76,13 +75,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// player poller: periodically checks playerctl and sends updates
 	quitPlayerPoll := make(chan struct{})
 	go func() {
-		ticker := time.NewTicker(3 * time.Second)
+		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				info, artwork, _ := getPlayerInfo()
-				messages <- ServerResponse{Status: "player", Output: info, Artwork: artwork}
+				info, _ := utils.GetPlayerInfo()
+				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
+				output := info.Title + " - " + info.Artist + " [" + info.Status + "]" + " (" + info.Player + ")" + "-" + info.Position + "/" + info.Length
+				messages <- ServerResponse{Status: "player", Output: output, Artwork: artwork}
 			case <-quitPlayerPoll:
 				return
 			}
@@ -114,8 +115,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 			// Special-case: if client requests "player_info", return current info immediately
 			if msg.Command == "player_info" {
-				info, artwork, _ := getPlayerInfo()
-				messages <- ServerResponse{Status: "player", Output: info, Artwork: artwork}
+				info, _ := utils.GetPlayerInfo()
+				messages <- ServerResponse{Status: "player", Output: info.Title, Artwork: info.Artwork}
 				continue
 			}
 
@@ -178,49 +179,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	close(messages)
 }
 
-// getPlayerInfo runs playerctl to get the current track, status, and artwork. Returns info string, artwork URL, and error.
-func getPlayerInfo() (string, string, error) {
-	// Try to get metadata (artist - title)
-	metaCmd := exec.Command("playerctl", "metadata", "--format", "{{artist}} - {{title}}")
-	outMeta, errMeta := metaCmd.Output()
-	meta := strings.TrimSpace(string(outMeta))
-
-	// Try to get status (Playing/Paused)
-	statusCmd := exec.Command("playerctl", "status")
-	outStatus, errStatus := statusCmd.Output()
-	status := strings.TrimSpace(string(outStatus))
-
-	// Try to get artwork URL
-	artworkCmd := exec.Command("playerctl", "metadata", "mpris:artUrl")
-	outArtwork, _ := artworkCmd.Output()
-	artwork := strings.TrimSpace(string(outArtwork))
-
-	// Convert file:// URLs to data URIs so browsers can display them
-	if artwork != "" {
-		artwork = fileURLToDataURI(artwork)
-	}
-
-	if errMeta != nil && errStatus != nil {
-		// Return combined error message if both fail
-		return "playerctl not available or no player running", "", errMeta
-	}
-
-	// Build info string
-	if meta == "" && status == "" {
-		return "No player running", "", nil
-	}
-
-	info := meta
-	if info == "" {
-		info = "(unknown track)"
-	}
-	if status != "" {
-		info = info + " — " + status
-	}
-	// log.Println("Current player info Update :", info)
-	return info, artwork, nil
-}
-
 func playerCtrl(command string) (string, error) {
 	if command != "play" && command != "pause" && command != "play-pause" && command != "next" && command != "previous" {
 		return "", nil
@@ -233,46 +191,13 @@ func playerCtrl(command string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// fileURLToDataURI converts a file:// URL to a base64 data URI that browsers can display
-func fileURLToDataURI(fileURL string) string {
-	if !strings.HasPrefix(fileURL, "file://") {
-		return fileURL
-	}
-
-	// Remove file:// prefix if present
-	filePath := strings.TrimPrefix(fileURL, "file://")
-
-	// Read the file
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		log.Printf("Failed to read artwork file: %v", err)
-		return "" // Return empty string on error
-	}
-
-	// Detect MIME type based on file extension
-	mimeType := "image/jpeg" // default
-	ext := strings.ToLower(filepath.Ext(filePath))
-	switch ext {
-	case ".png":
-		mimeType = "image/png"
-	case ".jpg", ".jpeg":
-		mimeType = "image/jpeg"
-	case ".gif":
-		mimeType = "image/gif"
-	case ".webp":
-		mimeType = "image/webp"
-	}
-
-	// Encode to base64
-	encoded := base64.StdEncoding.EncodeToString(data)
-
-	// Return as data URI
-	return "data:" + mimeType + ";base64," + encoded
-}
-
 func main() {
 	// Handle WebSocket requests at "/ws" with our wsHandler function
 	http.HandleFunc("/ws", wsHandler)
+	// return the remote.html
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./remote.html")
+	})
 
 	// Start the server on port 8765, listening on all network interfaces
 	log.Println("⚡ Blitz server starting at ws://0.0.0.0:8765/ws")
