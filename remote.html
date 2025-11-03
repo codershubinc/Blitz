@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <title>Blitz ⚡</title>
     <style>
         /* --- Base Styles --- */
@@ -457,8 +458,8 @@
                     </div>
                     <div class="player-controls">
                         <button class="control-btn" onclick="sendCommand('player_prev')" title="Previous">⏮️</button>
-                        <button class="control-btn play-pause" onclick="sendCommand('player_toggle')"
-                            title="Play/Pause">▶️</button>
+                        <button class="control-btn play-pause" onclick="sendCommand('player_toggle')" title="Play/Pause"
+                            id="play-pause">▶️</button>
                         <button class="control-btn" onclick="sendCommand('player_next')" title="Next">⏭️</button>
                     </div>
                 </div>
@@ -486,6 +487,15 @@
             const outputEl = document.getElementById("output");
             const ipInput = document.getElementById("ipAddress");
             const connectBtn = document.getElementById("connectButton");
+            const playPauseBtn = document.getElementById("play-pause");
+
+            function updatePlayPauseButton(isPlaying) {
+                if (isPlaying) {
+                    playPauseBtn.textContent = '⏸️'; // Pause icon
+                } else {
+                    playPauseBtn.textContent = '▶️'; // Play icon
+                }
+            }
 
             function connect() {
                 const ip = ipInput.value.trim();
@@ -548,6 +558,8 @@
                         if (textChanged) {
                             playerInfoEl.textContent = data.output || 'No music playing';
                         }
+                        // Update play/pause button
+                        updatePlayPauseButton(data["output"].includes("Playing"));
 
                         // Smooth artwork transition
                         if (data.artwork && data.artwork !== '') {
