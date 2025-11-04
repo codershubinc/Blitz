@@ -13,9 +13,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// --- This is where you define your allowed commands ---
+// AllowedCommands --- This is where you define your allowed commands ---
 // This is a CRITICAL security step.
-var ALLOWED_COMMANDS = map[string][]string{
+var AllowedCommands = map[string][]string{
 	"update":        {"sudo", "pacman", "-Syu"},
 	"list_home":     {"ls", "-l", "/home/swap/"},
 	"status":        {"git", "status"},
@@ -56,7 +56,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to upgrade connection:", err)
 		return
 	}
-	defer conn.Close()
+	defer func(conn *websocket.Conn) {
+		err := conn.Close()
+		if err != nil {
+			log.Println("Failed to close connection:", err)
+		}
+	}(conn)
 	log.Printf("Client connected: %s", conn.RemoteAddr())
 
 	// We'll use a single writer goroutine to avoid concurrent writes to the websocket.
@@ -140,7 +145,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Check if the command is in our allow-list
-			if commandToRun, ok := ALLOWED_COMMANDS[msg.Command]; ok {
+			if commandToRun, ok := AllowedCommands[msg.Command]; ok {
 				log.Printf("Running command: %v", commandToRun)
 
 				// Run all commands in the background (like an application launcher)
