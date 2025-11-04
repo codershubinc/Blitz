@@ -42,11 +42,12 @@ type ClientMessage struct {
 }
 
 type ServerResponse struct {
-	Status  string `json:"status"`
-	Command string `json:"command,omitempty"`
-	Output  string `json:"output,omitempty"`
-	Message string `json:"message,omitempty"`
-	Artwork string `json:"artwork,omitempty"`
+	Status  string   `json:"status"`
+	Command string   `json:"command,omitempty"`
+	Output  interface{} `json:"output,omitempty"`
+	Message string   `json:"message,omitempty"`
+	Artwork string   `json:"artwork,omitempty"`
+	 Player  *utils.MediaInfo  `json:"player,omitempty"`   
 }
 
 // This function handles each client connection
@@ -87,7 +88,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			case <-ticker.C:
 				info, _ := utils.GetPlayerInfo()
 				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
-				output := info.Title + " - " + info.Artist + " [" + info.Status + "]" + " (" + info.Player + ")" + "-" + info.Position + "/" + info.Length
+				output := info
 				messages <- ServerResponse{Status: "player", Output: output, Artwork: artwork}
 			case <-quitPlayerPoll:
 				return
@@ -121,7 +122,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			// Special-case: if client requests "player_info", return current info immediately
 			if msg.Command == "player_info" {
 				info, _ := utils.GetPlayerInfo()
-				messages <- ServerResponse{Status: "player", Output: info.Title, Artwork: info.Artwork}
+				messages <- ServerResponse{Status: "player", Output: info, Artwork: info.Artwork}
 				continue
 			}
 
