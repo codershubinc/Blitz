@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"os/exec"
+	"fmt"
 	"strings"
 )
 
@@ -19,11 +19,12 @@ type MediaInfo struct {
 func GetPlayerInfo() (MediaInfo, error) {
 	// Run one command to get everything: title, artwork, artist, album, position, length, status, player name
 	// Format: title|||artUrl|||artist|||album|||position|||length|||status|||playerName
-	cmd := exec.Command("playerctl", "metadata", "--format", "{{title}}|||{{mpris:artUrl}}|||{{artist}}|||{{album}}|||{{duration(position)}}|||{{duration(mpris:length)}}|||{{status}}|||{{playerName}}")
-	output, err := cmd.Output()
-
+	output, err := SpawnProcess(
+		`playerctl`,
+		[]string{"metadata", `--format`, `{{title}}|||{{mpris:artUrl}}|||{{artist}}|||{{album}}|||{{position}}|||{{mpris:length}}|||{{status}}|||{{playerName}}`})
 	if err != nil {
 		// playerctl not available or no player running
+		fmt.Print("Error getting player info:", err)
 		return MediaInfo{}, err
 	}
 
@@ -46,7 +47,6 @@ func GetPlayerInfo() (MediaInfo, error) {
 		Status:   strings.TrimSpace(parts[6]),
 		Player:   strings.TrimSpace(parts[7]),
 	}
-	
 
 	return mediaInfo, nil
 }
