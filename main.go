@@ -1,14 +1,13 @@
 package main
 
 import (
+	"Blitz/integration/utils"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os/exec"
 	"strings"
 	"time"
-
-	"Blitz/integration/utils"
 
 	"github.com/gorilla/websocket"
 )
@@ -42,12 +41,12 @@ type ClientMessage struct {
 }
 
 type ServerResponse struct {
-	Status  string   `json:"status"`
-	Command string   `json:"command,omitempty"`
-	Output  interface{} `json:"output,omitempty"`
-	Message string   `json:"message,omitempty"`
-	Artwork string   `json:"artwork,omitempty"`
-	 Player  *utils.MediaInfo  `json:"player,omitempty"`   
+	Status  string           `json:"status"`
+	Command string           `json:"command,omitempty"`
+	Output  interface{}      `json:"output,omitempty"`
+	Message string           `json:"message,omitempty"`
+	Artwork string           `json:"artwork,omitempty"`
+	Player  *utils.MediaInfo `json:"player,omitempty"`
 }
 
 // This function handles each client connection
