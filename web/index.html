@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="styles.css">
+    <title>Blitz ⚡</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>⚡ Blitz Remote</h1>
+
+        <div class="connection-area">
+            <input type="text" id="ipAddress" placeholder="Enter PC IP (e.g., 192.168.1.10)">
+            <button id="connectButton">Connect</button>
+        </div>
+
+        <p id="status" class="disconnected">Status: Not Connected</p>
+
+        <div class="main-content">
+            <div class="music-section">
+                <div class="player-info">
+                    <h3>🎵 Now Playing</h3>
+                    <div class="player-content">
+                        <div class="skeleton skeleton-artwork" id="skeletonArt"></div>
+                        <img id="albumArt" class="album-art" alt="Album artwork">
+                        <div>
+                            <div class="skeleton skeleton-text" id="skeletonText"></div>
+                            <div class="skeleton skeleton-text-small" id="skeletonTextSmall"></div>
+                            <div class="track" id="playerInfo">Waiting for connection...</div>
+                        </div>
+                    </div>
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="sendCommand('player_prev')" title="Previous">⏮️</button>
+                        <button class="control-btn play-pause" onclick="sendCommand('player_toggle')" title="Play/Pause"
+                            id="play-pause">▶️</button>
+                        <button class="control-btn" onclick="sendCommand('player_next')" title="Next">⏭️</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div id="remote-grid">
+                    <button class="remote-btn" onclick="sendCommand('update')">🚀 System Update</button>
+                    <button class="remote-btn" onclick="sendCommand('list_home')">📂 List Home</button>
+                    <button class="remote-btn" onclick="sendCommand('status')">Git Status</button>
+                    <button class="remote-btn" onclick="sendCommand('open_firefox')">🔥 Open Firefox</button>
+                    <button class="remote-btn" onclick="sendCommand('open_vscode')">🖥️ Open VSCode</button>
+                    <button class="remote-btn" onclick="sendCommand('open_edge')">🌐 Open Edge</button>
+                    <button class="remote-btn" onclick="sendCommand('open_postman')">📬 Open Postman</button>
+                </div>
+
+                <h3>Output Log:</h3>
+                <pre id="output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
+
