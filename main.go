@@ -199,10 +199,10 @@ func playerCtrl(command string) (string, error) {
 func main() {
 	// Handle WebSocket requests at "/ws" with our wsHandler function
 	http.HandleFunc("/ws", wsHandler)
-	// return the remote.html
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./remote.html")
-	})
+
+	// Serve static files (CSS, JS, etc.) from the web directory
+	fs := http.FileServer(http.Dir("./web"))
+	http.Handle("/", fs)
 
 	// Start the server on port 8765, listening on all network interfaces
 	log.Println("⚡ Blitz server starting at ws://0.0.0.0:8765/ws")
