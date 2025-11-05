@@ -85,10 +85,29 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case <-ticker.C:
-				info, _ := utils.GetPlayerInfo()
+				info, err := utils.GetPlayerInfo()
+				if err != nil {
+					return
+				}
 				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
 				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
 			case <-quitPlayerPoll:
+				return
+			}
+		}
+	}()
+
+	// bluetooth poller: periodically checks connected Bluetooth devices
+	quitBluetoothPoll := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(5 * time.Second) // Poll every 5 seconds (battery changes slowly)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				devices, _ := utils.GetBluetoothDevices()
+				messages <- ServerResponse{Status: "bluetooth", Output: devices}
+			case <-quitBluetoothPoll:
 				return
 			}
 		}
@@ -122,6 +141,13 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				info, _ := utils.GetPlayerInfo()
 				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
 				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
+				continue
+			}
+
+			// Special-case: if client requests "bluetooth_info", return current devices immediately
+			if msg.Command == "bluetooth_info" {
+				devices, _ := utils.GetBluetoothDevices()
+				messages <- ServerResponse{Status: "bluetooth", Output: devices}
 				continue
 			}
 
@@ -181,6 +207,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// cleanup when connection loop ends
 	close(quitPlayerPoll)
+	close(quitBluetoothPoll)
 	close(messages)
 }
 

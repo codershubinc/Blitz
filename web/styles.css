@@ -457,3 +457,157 @@ h3 {
         font-size: 1.1em;
     }
 }
+
+/* --- Bluetooth Devices Section --- */
+.bluetooth-info {
+    background-color: var(--accent-primary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    border: 1px solid var(--accent-secondary);
+}
+
+.bluetooth-info h3 {
+    color: var(--text-light);
+    font-size: 0.9em;
+    margin-bottom: 12px;
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.no-devices {
+    color: var(--text-dark);
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.device-card {
+    background-color: var(--bg-dark);
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: slideIn 0.3s ease-out;
+}
+
+.device-card:hover {
+    transform: translateX(3px);
+    box-shadow: 0 2px 8px rgba(233, 69, 96, 0.2);
+}
+
+.device-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.device-icon {
+    font-size: 1.5em;
+    min-width: 30px;
+    text-align: center;
+}
+
+.device-details {
+    flex: 1;
+}
+
+.device-name {
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: 2px;
+}
+
+.device-mac {
+    color: var(--text-dark);
+    font-size: 0.75em;
+    font-family: var(--font-mono);
+}
+
+/* --- Battery Indicator --- */
+.battery {
+    position: relative;
+    width: 60px;
+    height: 26px;
+    border: 2px solid var(--text-dark);
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #0a0a0a;
+}
+
+.battery::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 12px;
+    background: var(--text-dark);
+    border-radius: 0 2px 2px 0;
+}
+
+.battery-fill {
+    height: 100%;
+    transition: width 0.5s ease-out;
+    position: relative;
+}
+
+.battery.green .battery-fill {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.battery.yellow .battery-fill {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+.battery.red .battery-fill {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.battery-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 700;
+    color: var(--text-light);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+.no-battery {
+    color: var(--text-dark);
+    font-size: 0.85em;
+    font-style: italic;
+}

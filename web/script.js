@@ -132,6 +132,8 @@ function connect() {
                     }, 500);
                 }
             }
+        } else if (data.status === 'bluetooth') {
+            updateBluetoothDevices(data.output || []);
         } else if (data.status === 'success') {
             outputEl.textContent = data.output;
         } else {
@@ -224,5 +226,72 @@ function updateProgressBar(position, length) {
     } else {
         progressFill.style.width = '0%';
     }
+}
+
+// Bluetooth devices helper function with change detection
+let previousBluetoothData = null;
+
+function updateBluetoothDevices(devices) {
+    const container = document.getElementById('bluetoothDevices');
+
+    // Create a comparable string representation of the devices
+    const devicesHash = JSON.stringify(devices.map(d => ({
+        mac: d.macAddress,
+        name: d.name,
+        battery: d.battery,
+        connected: d.connected
+    })));
+
+    // Only update if something actually changed
+    if (previousBluetoothData === devicesHash) {
+        return; // No changes, skip update to prevent flickering
+    }
+
+    previousBluetoothData = devicesHash;
+
+    if (!devices || devices.length === 0) {
+        container.innerHTML = '<p class="no-devices">No devices connected</p>';
+        return;
+    }
+
+    container.innerHTML = devices.map(device => {
+        // Determine battery color based on percentage
+        const batteryColor = device.battery >= 50 ? 'green' :
+            device.battery >= 20 ? 'yellow' : 'red';
+
+        // Create battery display (or N/A if not available)
+        const batteryDisplay = device.battery >= 0 ?
+            `<div class="battery ${batteryColor}">
+                <div class="battery-fill" style="width: ${device.battery}%"></div>
+                <span class="battery-text">${device.battery}%</span>
+            </div>` :
+            '<span class="no-battery">N/A</span>';
+
+        // Map device icons based on type
+        const iconMap = {
+            'audio-card': '🎧',
+            'audio-headset': '🎧',
+            'audio-headphones': '🎧',
+            'input-keyboard': '⌨️',
+            'input-mouse': '🖱️',
+            'input-gaming': '🎮',
+            'phone': '📱',
+            'computer': '💻',
+        };
+        const deviceIcon = iconMap[device.icon] || '🔵';
+
+        return `
+            <div class="device-card">
+                <div class="device-info">
+                    <span class="device-icon">${deviceIcon}</span>
+                    <div class="device-details">
+                        <div class="device-name">${device.name}</div>
+                        <div class="device-mac">${device.macAddress}</div>
+                    </div>
+                </div>
+                ${batteryDisplay}
+            </div>
+        `;
+    }).join('');
 }
 
