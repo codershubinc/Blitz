@@ -40,12 +40,13 @@ type ClientMessage struct {
 }
 
 type ServerResponse struct {
-	Status  string           `json:"status"`
-	Command string           `json:"command,omitempty"`
-	Output  any      `json:"output,omitempty"`
-	Message string           `json:"message,omitempty"`
-	Artwork string           `json:"artwork,omitempty"`
-	Player  *utils.MediaInfo `json:"player,omitempty"`
+	Status    string                   `json:"status"`
+	Command   string                   `json:"command,omitempty"`
+	Output    any                      `json:"output,omitempty"`
+	Message   string                   `json:"message,omitempty"`
+	Artwork   string                   `json:"artwork,omitempty"`
+	Player    *utils.MediaInfo         `json:"player,omitempty"`
+	Bluetooth *[]utils.BluetoothDevice `json:"bluetooth,omitempty"`
 }
 
 // This function handles each client connection
@@ -81,7 +82,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	go utils.Poller(1, quitPlayerPoll, func() {
 		info, err := utils.GetPlayerInfo()
 		if err != nil {
-			
+			return
 		}
 		artwork, _ := utils.HandleArtworkRequest(info.Artwork)
 		messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
