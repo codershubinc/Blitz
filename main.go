@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Blitz/integration/utils"
+	"Blitz/utils"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -87,7 +87,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			case <-ticker.C:
 				info, err := utils.GetPlayerInfo()
 				if err != nil {
-					return
+					continue
 				}
 				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
 				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
