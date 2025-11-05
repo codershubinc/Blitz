@@ -42,7 +42,7 @@ type ClientMessage struct {
 type ServerResponse struct {
 	Status  string           `json:"status"`
 	Command string           `json:"command,omitempty"`
-	Output  interface{}      `json:"output,omitempty"`
+	Output  any      `json:"output,omitempty"`
 	Message string           `json:"message,omitempty"`
 	Artwork string           `json:"artwork,omitempty"`
 	Player  *utils.MediaInfo `json:"player,omitempty"`
