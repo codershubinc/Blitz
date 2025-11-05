@@ -14,3 +14,14 @@ func SpawnProcess(command string, args []string) ([]byte, error) {
 
 	return output, nil
 }
+
+func SpawnProcessBack(command string, args []string) (string, error) {
+	cmd := exec.Command(command, args...)
+
+	err := cmd.Start()
+	if err != nil {
+		return "", err
+	}
+
+	return "Command launched successfully. for =>  " + command, nil
+}
