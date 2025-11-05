@@ -50,3 +50,22 @@ func GetPlayerInfo() (MediaInfo, error) {
 
 	return mediaInfo, nil
 }
+
+
+func GetAllActivePlayers() ([]string, error) {
+	// Run playerctl to get the list of all active players
+	output, err := SpawnProcess(
+		`playerctl`,
+		[]string{"-l"},
+	)
+	if err != nil {
+		// playerctl not available or no players running
+		fmt.Print("Error getting active players:", err)
+		return []string{}, err
+	}
+
+	// Split the output by new lines to get individual player names
+	players := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	return players, nil
+}

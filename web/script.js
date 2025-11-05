@@ -43,8 +43,8 @@ function connect() {
     };
 
     ws.onmessage = (event) => {
-        console.log("Message from server:", event.data);
         let data = JSON.parse(event.data);
+        console.log("Message from server:", data);
 
         if (data.status === 'player') {
             // Hide skeleton on first data
@@ -55,11 +55,13 @@ function connect() {
             const albumArtEl = document.getElementById('albumArt');
             const playerControlsEl = document.querySelector('.player-controls');
 
-            // Check if music is actually playing (not "No player running" or "playerctl not available")
-            const hasActivePlayer = data.output &&
-                !data.output.includes('No player running') &&
-                !data.output.includes('playerctl not available') &&
-                !data.output.includes('No music');
+            // Get player data from the new Player field (MediaInfo struct)
+            const player = data.player || {};
+
+            // Check if music is actually playing
+            const hasActivePlayer = player.Title &&
+                player.Title !== '' &&
+                player.Status !== '';
 
             // Show/hide player controls
             if (hasActivePlayer) {
@@ -68,16 +70,42 @@ function connect() {
                 playerControlsEl.classList.add('hidden');
             }
 
+            // Build display text from MediaInfo struct
+            let displayText = 'No music playing';
+            if (hasActivePlayer) {
+                displayText = `${player.Title}`;
+                if (player.Artist) {
+                    displayText += ` - ${player.Artist}`;
+                }
+                if (player.Status) {
+                    displayText += ` — ${player.Status}`;
+                }
+                if (player.Album) {
+                    displayText += `\n📀 ${player.Album}`;
+                }
+                if (player.Player) {
+                    displayText += ` (${player.Player})`;
+                }
+            }
+
             // Check if content actually changed
-            const textChanged = playerInfoEl.textContent !== (data.output || 'No music playing');
+            const textChanged = playerInfoEl.textContent !== displayText;
             const artworkChanged = albumArtEl.src !== data.artwork;
 
-            // Update text
+            // Update text with fade animation
             if (textChanged) {
-                playerInfoEl.textContent = data.output || 'No music playing';
+                playerInfoEl.style.opacity = '0';
+                setTimeout(() => {
+                    playerInfoEl.textContent = displayText;
+                    playerInfoEl.style.opacity = '1';
+                }, 150);
             }
-            // Update play/pause button
-            updatePlayPauseButton(data["output"].includes("Playing"));
+
+            // Update play/pause button based on Status field
+            updatePlayPauseButton(player.Status === "Playing");
+
+            // Update progress bar with position and duration
+            updateProgressBar(player.Position, player.Length);
 
             // Smooth artwork transition
             if (data.artwork && data.artwork !== '') {
@@ -164,5 +192,37 @@ function hideSkeleton() {
     document.getElementById('skeletonText').classList.remove('active');
     document.getElementById('skeletonTextSmall').classList.remove('active');
     document.getElementById('playerInfo').classList.remove('hidden');
+}
+
+// Progress bar helper function
+function updateProgressBar(position, length) {
+    const progressFill = document.getElementById('progressFill');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+
+    // Position and Length come as microseconds from playerctl
+    // Convert to seconds
+    const positionSeconds = position ? parseInt(position) / 1000000 : 0;
+    const lengthSeconds = length ? parseInt(length) / 1000000 : 0;
+
+    // Format time as MM:SS
+    const formatTime = (seconds) => {
+        if (!seconds || isNaN(seconds) || seconds <= 0) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Update time labels
+    currentTimeEl.textContent = formatTime(positionSeconds);
+    totalTimeEl.textContent = formatTime(lengthSeconds);
+
+    // Update progress bar width
+    if (lengthSeconds > 0) {
+        const percentage = (positionSeconds / lengthSeconds) * 100;
+        progressFill.style.width = `${Math.min(percentage, 100)}%`;
+    } else {
+        progressFill.style.width = '0%';
+    }
 }
 

@@ -87,8 +87,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			case <-ticker.C:
 				info, _ := utils.GetPlayerInfo()
 				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
-				output := info
-				messages <- ServerResponse{Status: "player", Output: output, Artwork: artwork}
+				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
 			case <-quitPlayerPoll:
 				return
 			}
@@ -121,7 +120,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			// Special-case: if client requests "player_info", return current info immediately
 			if msg.Command == "player_info" {
 				info, _ := utils.GetPlayerInfo()
-				messages <- ServerResponse{Status: "player", Output: info, Artwork: info.Artwork}
+				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
+				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
 				continue
 			}
 

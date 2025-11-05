@@ -33,6 +33,14 @@
                             <div class="track" id="playerInfo">Waiting for connection...</div>
                         </div>
                     </div>
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <span class="time-label" id="currentTime">0:00</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="time-label" id="totalTime">0:00</span>
+                    </div>
                     <div class="player-controls">
                         <button class="control-btn" onclick="sendCommand('player_prev')" title="Previous">⏮️</button>
                         <button class="control-btn play-pause" onclick="sendCommand('player_toggle')" title="Play/Pause"
@@ -63,4 +71,3 @@
 </body>
 
 </html>
-

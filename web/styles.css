@@ -235,6 +235,55 @@ h3 {
     overflow: hidden;
 }
 
+/* --- Progress Bar --- */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    padding: 0 5px;
+}
+
+.time-label {
+    font-size: 0.85em;
+    color: var(--text-dark);
+    font-family: var(--font-mono);
+    min-width: 40px;
+    text-align: center;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background-color: var(--bg-dark);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-secondary), #ff6b8a);
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+    box-shadow: 0 0 8px rgba(233, 69, 96, 0.6);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #fff;
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
 .control-btn {
     background-color: var(--bg-dark);
     border: 1px solid var(--accent-secondary);
@@ -408,4 +457,3 @@ h3 {
         font-size: 1.1em;
     }
 }
-
