@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -79,39 +78,24 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// player poller: periodically checks playerctl and sends updates
 	quitPlayerPoll := make(chan struct{})
-	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				info, err := utils.GetPlayerInfo()
-				if err != nil {
-					continue
-				}
-				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
-				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
-			case <-quitPlayerPoll:
-				return
-			}
+	go utils.Poller(1, quitPlayerPoll, func() {
+		info, err := utils.GetPlayerInfo()
+		if err != nil {
+			
 		}
-	}()
+		artwork, _ := utils.HandleArtworkRequest(info.Artwork)
+		messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
+	})
 
 	// bluetooth poller: periodically checks connected Bluetooth devices
 	quitBluetoothPoll := make(chan struct{})
-	go func() {
-		ticker := time.NewTicker(5 * time.Second) // Poll every 5 seconds (battery changes slowly)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				devices, _ := utils.GetBluetoothDevices()
-				messages <- ServerResponse{Status: "bluetooth", Output: devices}
-			case <-quitBluetoothPoll:
-				return
-			}
+	go utils.Poller(5, quitBluetoothPoll, func() {
+		devices, err := utils.GetBluetoothDevices()
+		if err != nil {
+			return
 		}
-	}()
+		messages <- ServerResponse{Status: "bluetooth", Output: devices}
+	})
 
 	// Loop forever, reading messages from this client
 	for {
