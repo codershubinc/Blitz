@@ -1,11 +1,15 @@
 package main
 
 import (
-	"Blitz/integration/utils"
+	"Blitz/utils"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -41,13 +45,18 @@ type ClientMessage struct {
 }
 
 type ServerResponse struct {
-	Status  string           `json:"status"`
-	Command string           `json:"command,omitempty"`
-	Output  interface{}      `json:"output,omitempty"`
-	Message string           `json:"message,omitempty"`
-	Artwork string           `json:"artwork,omitempty"`
-	Player  *utils.MediaInfo `json:"player,omitempty"`
+	Status    string                   `json:"status"`
+	Command   string                   `json:"command,omitempty"`
+	Output    interface{}              `json:"output,omitempty"`
+	Message   string                   `json:"message,omitempty"`
+	Artwork   string                   `json:"artwork,omitempty"`
+	Player    *utils.MediaInfo         `json:"player,omitempty"`
+	Bluetooth *[]utils.BluetoothDevice `json:"bluetooth,omitempty"`
+	WiFi      *utils.WiFiInfo          `json:"wifi,omitempty"`
 }
+
+// simple artwork cache instance (in-memory)
+var artCache = utils.NewArtworkCache()
 
 // This function handles each client connection
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,19 +89,36 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// player poller: periodically checks playerctl and sends updates
 	quitPlayerPoll := make(chan struct{})
 	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				info, _ := utils.GetPlayerInfo()
-				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
-				output := info
-				messages <- ServerResponse{Status: "player", Output: output, Artwork: artwork}
-			case <-quitPlayerPoll:
-				return
+		utils.Poller(1*time.Second, quitPlayerPoll, func() {
+			info, _ := utils.GetPlayerInfo()
+
+			// Use artwork cache to avoid repeated disk reads
+			artworkData, _ := artCache.GetOrFetch(info.Artwork, func() (string, error) {
+				return utils.HandleArtworkRequest(info.Artwork)
+			})
+
+			messages <- ServerResponse{Status: "player", Output: info, Artwork: artworkData}
+		})
+	}()
+
+	// Bluetooth poller: periodically checks Bluetooth devices
+	quitBluetoothPoll := make(chan struct{})
+	go func() {
+		utils.Poller(5*time.Second, quitBluetoothPoll, func() {
+			devices, _ := utils.GetBluetoothDevices()
+			messages <- ServerResponse{Status: "bluetooth", Bluetooth: &devices}
+		})
+	}()
+
+	// WiFi poller: periodically checks WiFi status and speed
+	quitWiFiPoll := make(chan struct{})
+	go func() {
+		utils.Poller(3*time.Second, quitWiFiPoll, func() {
+			wifiInfo, _ := utils.GetWiFiInfo()
+			if wifiInfo != nil {
+				messages <- ServerResponse{Status: "wifi", WiFi: wifiInfo}
 			}
-		}
+		})
 	}()
 
 	// Loop forever, reading messages from this client
@@ -122,6 +148,20 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			if msg.Command == "player_info" {
 				info, _ := utils.GetPlayerInfo()
 				messages <- ServerResponse{Status: "player", Output: info, Artwork: info.Artwork}
+				continue
+			}
+
+			// Handle bluetooth_info request
+			if msg.Command == "bluetooth_info" {
+				devices, _ := utils.GetBluetoothDevices()
+				messages <- ServerResponse{Status: "bluetooth", Bluetooth: &devices}
+				continue
+			}
+
+			// Handle wifi_info request
+			if msg.Command == "wifi_info" {
+				wifiInfo, _ := utils.GetWiFiInfo()
+				messages <- ServerResponse{Status: "wifi", WiFi: wifiInfo}
 				continue
 			}
 
@@ -181,6 +221,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// cleanup when connection loop ends
 	close(quitPlayerPoll)
+	close(quitBluetoothPoll)
+	close(quitWiFiPoll)
 	close(messages)
 }
 
@@ -200,14 +242,80 @@ func main() {
 	// Handle WebSocket requests at "/ws" with our wsHandler function
 	http.HandleFunc("/ws", wsHandler)
 
+	// Recreate upload directory path in user's Downloads
+	homeDir, err := os.UserHomeDir()
+	uploadDir := ""
+	if err == nil {
+		uploadDir = filepath.Join(homeDir, "Downloads", "blitz")
+	} else {
+		// fallback to a local uploads folder
+		uploadDir = "./uploads"
+	}
+
+	// Ensure upload directory exists
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Printf("Warning: failed to create upload dir %s: %v", uploadDir, err)
+	}
+
+	// Upload endpoint
+	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
+		handleFileUpload(w, r, uploadDir)
+	})
+
 	// Serve static files (CSS, JS, etc.) from the web directory
 	fs := http.FileServer(http.Dir("./web"))
 	http.Handle("/", fs)
 
 	// Start the server on port 8765, listening on all network interfaces
 	log.Println("⚡ Blitz server starting at ws://0.0.0.0:8765/ws")
-	err := http.ListenAndServe("0.0.0.0:8765", nil)
+	err = http.ListenAndServe("0.0.0.0:8765", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+// handleFileUpload handles multipart/form-data file uploads and saves files to uploadDir.
+func handleFileUpload(w http.ResponseWriter, r *http.Request, uploadDir string) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Limit memory used while parsing form (100 MB)
+	if err := r.ParseMultipartForm(100 << 20); err != nil {
+		http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "failed to get file from form", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	filename := filepath.Base(header.Filename)
+	timestamp := time.Now().Unix()
+	dstPath := filepath.Join(uploadDir, fmt.Sprintf("%d_%s", timestamp, filename))
+
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		http.Error(w, "failed to create destination file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		http.Error(w, "failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]interface{}{
+		"status":   "success",
+		"filename": filename,
+		"path":     dstPath,
+		"size":     header.Size,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
 }
