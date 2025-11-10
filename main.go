@@ -55,9 +55,6 @@ type ServerResponse struct {
 	WiFi      *utils.WiFiInfo          `json:"wifi,omitempty"`
 }
 
-// simple artwork cache instance (in-memory)
-var artCache = utils.NewArtworkCache()
-
 // This function handles each client connection
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -93,10 +90,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			info, _ := utils.GetPlayerInfo()
 
 			// Use artwork cache to avoid repeated disk reads
-			artworkData, _ := artCache.GetOrFetch(info.Artwork, func() (string, error) {
-				return utils.HandleArtworkRequest(info.Artwork)
-			})
-
+			artworkData, _ :=  utils.HandleArtworkRequest(info.Artwork)
+			info.Artwork = artworkData
 			messages <- ServerResponse{Status: "player", Output: info, Artwork: artworkData}
 		})
 	}()

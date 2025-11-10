@@ -9,13 +9,17 @@ import (
 )
 
 type WiFiInfo struct {
-	SSID          string  `json:"ssid"`
-	Signal        int     `json:"signal"`         // Signal strength (0-100)
-	Frequency     string  `json:"frequency"`      // e.g., "5 GHz" or "2.4 GHz"
-	DownloadSpeed float64 `json:"download_speed"` // Mbps
-	UploadSpeed   float64 `json:"upload_speed"`   // Mbps
-	Connected     bool    `json:"connected"`
-	InterfaceName string  `json:"interface_name"`
+	SSID           string  `json:"ssid"`
+	SignalStrength int     `json:"signalStrength"` // Signal strength (0-100)
+	LinkSpeed      int     `json:"linkSpeed"`      // Link speed in Mbps
+	Frequency      string  `json:"frequency"`      // e.g., "5 GHz" or "2.4 GHz"
+	Security       string  `json:"security"`       // Security type (WPA2, WPA3, etc.)
+	IPAddress      string  `json:"ipAddress"`      // IP address of the device
+	Connected      bool    `json:"connected"`
+	DownloadSpeed  float64 `json:"downloadSpeed"` // Current download speed in Mbps
+	UploadSpeed    float64 `json:"uploadSpeed"`   // Current upload speed in Mbps
+	InterfaceName  string  `json:"interface"`     // Network interface name
+	UnitOfSpeed    string  `json:"unitOfSpeed"`   // Unit of speed (Mbps, Kbps, etc.)
 }
 
 var (
@@ -34,7 +38,8 @@ func GetWiFiInfo() (*WiFiInfo, error) {
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	info := &WiFiInfo{
-		Connected: false,
+		Connected:   false,
+		UnitOfSpeed: "Mbps",
 	}
 
 	// Find the active connection (starts with "yes:")
@@ -47,7 +52,7 @@ func GetWiFiInfo() (*WiFiInfo, error) {
 
 				// Parse signal strength
 				if signal, err := strconv.Atoi(parts[2]); err == nil {
-					info.Signal = signal
+					info.SignalStrength = signal
 				}
 
 				info.Frequency = parts[3]
@@ -60,6 +65,9 @@ func GetWiFiInfo() (*WiFiInfo, error) {
 	if !info.Connected {
 		return info, nil
 	}
+
+	// Get additional connection details (security, IP, link speed)
+	getConnectionDetails(info)
 
 	// Get network speed for the interface
 	downloadSpeed, uploadSpeed := getCurrentNetworkSpeed(info.InterfaceName)
@@ -117,4 +125,75 @@ func getCurrentNetworkSpeed(interfaceName string) (float64, float64) {
 	lastCheckTime = now
 
 	return downloadSpeed, uploadSpeed
+}
+
+// getConnectionDetails retrieves additional WiFi connection details like security, IP, and link speed
+func getConnectionDetails(info *WiFiInfo) {
+	// Get active connection name and details using nmcli
+	connOutput, err := SpawnProcess("nmcli", []string{"-t", "-f", "NAME,DEVICE", "connection", "show", "--active"})
+	if err != nil {
+		return
+	}
+
+	var connectionName string
+	lines := strings.Split(strings.TrimSpace(string(connOutput)), "\n")
+	for _, line := range lines {
+		parts := strings.Split(line, ":")
+		if len(parts) >= 2 && parts[1] == info.InterfaceName {
+			connectionName = parts[0]
+			break
+		}
+	}
+
+	if connectionName == "" {
+		return
+	}
+
+	// Get detailed connection info
+	detailOutput, err := SpawnProcess("nmcli", []string{"-t", "-f", "802-11-wireless-security.key-mgmt,IP4.ADDRESS,GENERAL.DEVICE", "connection", "show", connectionName})
+	if err == nil {
+		detailLines := strings.Split(strings.TrimSpace(string(detailOutput)), "\n")
+		for _, line := range detailLines {
+			parts := strings.Split(line, ":")
+			if len(parts) >= 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+
+				switch key {
+				case "802-11-wireless-security.key-mgmt":
+					if value != "" && value != "--" {
+						info.Security = strings.ToUpper(value)
+					} else {
+						info.Security = "Open"
+					}
+				case "IP4.ADDRESS":
+					if value != "" && value != "--" {
+						// Extract IP address (remove /24 suffix if present)
+						ipParts := strings.Split(value, "/")
+						info.IPAddress = ipParts[0]
+					}
+				}
+			}
+		}
+	}
+
+	// Get link speed using iw command
+	iwOutput, err := SpawnProcess("iw", []string{"dev", info.InterfaceName, "link"})
+	if err == nil {
+		iwLines := strings.Split(string(iwOutput), "\n")
+		for _, line := range iwLines {
+			if strings.Contains(line, "tx bitrate:") {
+				// Extract speed (e.g., "tx bitrate: 866.7 MBit/s")
+				parts := strings.Fields(line)
+				for i, part := range parts {
+					if part == "bitrate:" && i+1 < len(parts) {
+						if speed, err := strconv.ParseFloat(parts[i+1], 64); err == nil {
+							info.LinkSpeed = int(speed)
+						}
+						break
+					}
+				}
+			}
+		}
+	}
 }
