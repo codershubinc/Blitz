@@ -90,7 +90,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			info, _ := utils.GetPlayerInfo()
 
 			// Use artwork cache to avoid repeated disk reads
-			artworkData, _ :=  utils.HandleArtworkRequest(info.Artwork)
+			artworkData, _ := utils.HandleArtworkRequest(info.Artwork)
 			info.Artwork = artworkData
 			messages <- ServerResponse{Status: "player", Output: info, Artwork: artworkData}
 		})
@@ -142,7 +142,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			// Special-case: if client requests "player_info", return current info immediately
 			if msg.Command == "player_info" {
 				info, _ := utils.GetPlayerInfo()
-				messages <- ServerResponse{Status: "player", Output: info, Artwork: info.Artwork}
+				artwork, _ := utils.HandleArtworkRequest(info.Artwork)
+				messages <- ServerResponse{Status: "player", Player: &info, Artwork: artwork}
+				continue
+			}
+
+			// Special-case: if client requests "bluetooth_info", return current devices immediately
+			if msg.Command == "bluetooth_info" {
+				devices, _ := utils.GetBluetoothDevices()
+				messages <- ServerResponse{Status: "bluetooth", Output: devices}
 				continue
 			}
 
