@@ -1,7 +1,7 @@
 package utils
 
 func LaunchApp(appName string) (string, error) {
-	output, err := SpawnProcessBack(
+	output, err := SpawnProcess(
 		`gtk-launch`,
 		[]string{appName},
 	)
@@ -9,5 +9,5 @@ func LaunchApp(appName string) (string, error) {
 		return "", err
 	}
 
-	return output, nil
+	return string(output), nil
 }

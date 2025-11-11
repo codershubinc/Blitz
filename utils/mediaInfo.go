@@ -34,7 +34,7 @@ func GetPlayerInfo() (MediaInfo, error) {
 	// Make sure we have all 8 parts (if not, player might not be running)
 	if len(parts) < 8 {
 		return MediaInfo{}, nil
-	}
+	} 
 
 	// Parse each part
 	mediaInfo := MediaInfo{

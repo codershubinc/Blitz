@@ -1,20 +1,19 @@
 package utils
 
-import (
-	"time"
-)
+import "time"
 
-// Poller runs fn every interval seconds until quit channel is closed
+// Poller runs fn every interval until quit channel is closed.
+// The caller should pass an interval as a time.Duration (e.g. 1*time.Second).
 func Poller(interval time.Duration, quit <-chan struct{}, fn func()) {
-	ticker := time.NewTicker(interval * time.Second)
-	defer ticker.Stop() // Cleanup ticker when done
-	
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ticker.C:
-			fn() // Execute the callback
+			fn()
 		case <-quit:
-			return // Stop the poller when quit signal received
+			return
 		}
 	}
 }
