@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -18,8 +19,9 @@ func main() {
 	fmt.Println("Starting server on http://0.0.0.0:8765")
 	fmt.Println("WebSocket endpoint: ws://localhost:8765/ws")
 	fmt.Println("Press Ctrl+C to stop the server")
+	localAddr := os.Getenv("LOCAL_HOST_IP") + ":" + os.Getenv("LOCAL_HOST_PORT")
 
-	if err := http.ListenAndServe("0.0.0.0:8765", nil); err != nil {
+	if err := http.ListenAndServe(localAddr, nil); err != nil {
 		log.Fatal("Server error:", err)
 	}
 }
