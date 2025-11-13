@@ -25,7 +25,7 @@ func CreateWebSocketConnection(w http.ResponseWriter, r *http.Request) (*websock
 	return Conn, nil
 }
 
-func CloseWebSocketConnection( ) {
+func CloseWebSocketConnection() {
 	if Conn != nil {
 		err := Conn.Close()
 		if err != nil {

@@ -9,7 +9,7 @@ import (
 )
 
 func Handle() {
-	fmt.Println("Started poller Handler ....")
+	// fmt.Println("Started poller Handler ....")
 
 	Poller(1*time.Second, make(chan struct{}), func() {
 		msg, err := utils.GetPlayerInfo()

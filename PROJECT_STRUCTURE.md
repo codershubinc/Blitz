@@ -49,19 +49,23 @@ Blitz/
 ## Issues with Current Structure
 
 ### 1. **Flat `utils/` Directory**
+
 - ❌ Mixed concerns (player, bluetooth, wifi, spotify)
 - ❌ No clear separation between reusable and app-specific code
 - ❌ Hard to maintain as project grows
 
 ### 2. **Import Cycles**
+
 ```
 utils/websocket → utils/poller → utils/websocket (CYCLE!)
 ```
 
 ### 3. **Binary in Root**
+
 - ❌ `blitz` binary should be in `bin/` or gitignored
 
 ### 4. **No Clear Boundaries**
+
 - ❌ Business logic mixed with utilities
 - ❌ Handlers mixed with services
 
@@ -120,6 +124,7 @@ Blitz/
 ```
 
 **Benefits:**
+
 - ✅ Clear domain separation
 - ✅ Easy to find related code
 - ✅ Prevents import cycles
@@ -219,6 +224,7 @@ Blitz/
 ```
 
 **Benefits:**
+
 - ✅ Standard Go project layout
 - ✅ Clear separation of concerns
 - ✅ Easy to scale
@@ -230,6 +236,7 @@ Blitz/
 ## Import Rules
 
 ### Option A (Minimal):
+
 ```
 main → utils/{domain} ✅
 utils/{domain} → models ✅
@@ -237,6 +244,7 @@ utils/{domain} ↔ utils/{domain} ✅ (carefully)
 ```
 
 ### Option B (Full):
+
 ```
 cmd → internal/handlers → internal/services → internal/models ✅
 internal/services → pkg ✅
@@ -250,6 +258,7 @@ internal ← NEVER from outside ❌
 ## Migration Path
 
 ### Phase 1: Clean Up (1 hour)
+
 ```bash
 # Move binary
 mkdir -p bin
@@ -265,6 +274,7 @@ mv models/server_responce.go models/response.go
 ```
 
 ### Phase 2: Reorganize utils/ (2 hours)
+
 ```bash
 # Create domain directories
 mkdir -p utils/player utils/bluetooth utils/wifi utils/spotify utils/system
@@ -284,6 +294,7 @@ mv utils/spawnProcesses.go utils/system/process.go
 ```
 
 ### Phase 3: Full Refactor (8 hours)
+
 ```bash
 # Create new structure
 mkdir -p cmd/blitz internal/{handlers,services,models} pkg
@@ -302,6 +313,7 @@ mv main.go cmd/blitz/
 ### Good Patterns ✅
 
 **1. Domain-Driven Structure**
+
 ```
 services/
 ├── player/
@@ -311,6 +323,7 @@ services/
 ```
 
 **2. Feature-Based Structure**
+
 ```
 handlers/
 ├── websocket/
@@ -321,6 +334,7 @@ handlers/
 ```
 
 **3. Layered Structure**
+
 ```
 internal/
 ├── handlers/    # Layer 1: Input
@@ -331,6 +345,7 @@ internal/
 ### Bad Patterns ❌
 
 **1. Flat Structure**
+
 ```
 utils/
 ├── file1.go
@@ -340,11 +355,13 @@ utils/
 ```
 
 **2. Circular Dependencies**
+
 ```
 package_a → package_b → package_a (CYCLE!)
 ```
 
 **3. God Packages**
+
 ```
 utils/     # Contains everything
 common/    # Unclear purpose
@@ -356,6 +373,7 @@ helpers/   # Too generic
 ## Package Naming Conventions
 
 ### Good Names ✅
+
 ```go
 package player      // Clear domain
 package websocket   // Clear purpose
@@ -363,6 +381,7 @@ package spotify     // Clear service
 ```
 
 ### Bad Names ❌
+
 ```go
 package util        // Too generic
 package common      // Unclear
@@ -373,11 +392,11 @@ package misc        // Everything ends up here
 
 ## Summary
 
-| Option | Time | Complexity | Benefits |
-|--------|------|------------|----------|
-| **Current** | 0h | None | None - has issues |
-| **Option A** | 2h | Low | Clean domains, fixes most issues |
-| **Option B** | 8h | High | Professional, scalable, future-proof |
+| Option       | Time | Complexity | Benefits                             |
+| ------------ | ---- | ---------- | ------------------------------------ |
+| **Current**  | 0h   | None       | None - has issues                    |
+| **Option A** | 2h   | Low        | Clean domains, fixes most issues     |
+| **Option B** | 8h   | High       | Professional, scalable, future-proof |
 
 ### Recommendation
 

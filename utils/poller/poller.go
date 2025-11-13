@@ -7,7 +7,7 @@ import (
 
 // Poller runs fn every interval until quit channel is closed
 func Poller(interval time.Duration, quit <-chan struct{}, fn func()) {
-	fmt.Println("Poller started, running every", interval)
+	// fmt.Println("Poller started, running every", interval)
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 

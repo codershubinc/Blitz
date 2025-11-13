@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello Blitz")
+	fmt.Println("Hello Blitz Server ...")
 
 	// Setup HTTP routes
 	http.HandleFunc("/ws", websocket.Handle)
