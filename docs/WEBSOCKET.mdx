@@ -36,16 +36,16 @@ sequenceDiagram
     participant Client
     participant HTTP as HTTP Handler
     participant Upgrader
-    participant Conn as WebSocket Connection
-    participant Writer as Writer Goroutine
-    participant Reader as Reader Loop
+    participant Conn as WebSocket
+    participant Writer
+    participant Reader
     participant Channel
-    
+
     Client->>HTTP: HTTP GET /ws
     HTTP->>Upgrader: Upgrade connection
     Upgrader-->>Conn: WebSocket established
     Conn->>Client: Welcome message
-    
+
     par Writer Goroutine
         Conn->>Writer: Start writer
         loop Broadcast
@@ -60,39 +60,23 @@ sequenceDiagram
             Reader->>Client: Response
         end
     end
-    
-    Note over Writer,Reader: Both run concurrently<br/>until connection closed
-    
-    style Conn fill:#764ba2,color:#fff
-    style Writer fill:#28a745,color:#fff
-    style Reader fill:#3498db,color:#fff
-    style Channel fill:#e74c3c,color:#fff
+
+    Note over Writer,Reader: Both run concurrently
 ```
 
 ### Message Flow
 
 ```mermaid
 graph TB
-    subgraph "Server to Client"
-        Poller[Poller/Service] -->|data| Channel[Shared Channel<br/>capacity: 100]
-        Channel -->|range loop| Writer[Writer Goroutine]
-        Writer -->|WriteJSON| WS1[WebSocket]
-        WS1 -->|network| Client1[Web Client]
-    end
-    
-    subgraph "Client to Server"
-        Client2[Web Client] -->|network| WS2[WebSocket]
-        WS2 -->|ReadJSON| Reader[Reader Loop]
-        Reader -->|parse| Handler[Command Handler]
-        Handler -->|response| WS2
-    end
-    
-    style Poller fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-    style Channel fill:#e74c3c,stroke:#333,stroke-width:2px,color:#fff
-    style Writer fill:#667eea,stroke:#333,stroke-width:2px,color:#fff
-    style Reader fill:#3498db,stroke:#333,stroke-width:2px,color:#fff
-    style Client1 fill:#f39c12,stroke:#333,stroke-width:2px,color:#fff
-    style Client2 fill:#f39c12,stroke:#333,stroke-width:2px,color:#fff
+    Poller["Poller/Service"] -->|data| Channel["Shared Channel capacity: 100"]
+    Channel -->|range loop| Writer["Writer Goroutine"]
+    Writer -->|WriteJSON| WS1[WebSocket]
+    WS1 -->|network| Client1["Web Client"]
+
+    Client2["Web Client"] -->|network| WS2[WebSocket]
+    WS2 -->|ReadJSON| Reader["Reader Loop"]
+    Reader -->|parse| Handler["Command Handler"]
+    Handler -->|response| WS2
 ```
 
 ---
@@ -598,7 +582,7 @@ type ServerResponse struct {
 <summary>💻 Click to see full client implementation</summary>
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8765/ws');
+const ws = new WebSocket("ws://localhost:8765/ws");
 
 // Connection opened
 ws.onopen = function (event) {
@@ -624,8 +608,8 @@ ws.onclose = function (event) {
 };
 
 // Error
-ws.onerror = function(error) {
-    console.error('WebSocket error:', error);
+ws.onerror = function (error) {
+  console.error("WebSocket error:", error);
 };
 ```
 

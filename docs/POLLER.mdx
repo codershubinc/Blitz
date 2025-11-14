@@ -188,20 +188,20 @@ close(quit)
 
 ```mermaid
 sequenceDiagram
-    participant Main as main()
-    participant PH as Poller.Handle()
-    participant P as Poller()
-    participant Fn as Anonymous Function
-    participant Utils as GetPlayerInfo()
+    participant Main as main
+    participant PH as Poller.Handle
+    participant P as Poller
+    participant Fn as Function
+    participant Utils as GetPlayerInfo
     participant Ch as Channel
     participant WS as WebSocket
-    participant Client as Web Client
-    
+    participant Client
+
     Main->>PH: go poller.Handle()
     activate PH
     PH->>P: Start with 1s interval
     activate P
-    
+
     loop Every 1 Second
         P->>Fn: Execute fn()
         activate Fn
@@ -212,29 +212,18 @@ sequenceDiagram
         WS->>Client: Send JSON message
         deactivate Fn
     end
-    
-    Note over P: Runs indefinitely<br/>until app exits
-    
-    style PH fill:#667eea,color:#fff
-    style P fill:#28a745,color:#fff
-    style Ch fill:#e74c3c,color:#fff
-    style Client fill:#f39c12,color:#fff
+
+    Note over P: Runs indefinitely
 ```
 
 ### Communication Flow
 
 ```mermaid
 graph LR
-    A[Poller<br/>1s Timer] -->|poll| B[GetPlayerInfo<br/>playerctl]
-    B -->|media data| C[Channel<br/>Buffer: 100]
-    C -->|broadcast| D[WebSocket<br/>Writer]
-    D -->|JSON| E[Web Client]
-    
-    style A fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-    style B fill:#3498db,stroke:#333,stroke-width:2px,color:#fff
-    style C fill:#e74c3c,stroke:#333,stroke-width:2px,color:#fff
-    style D fill:#764ba2,stroke:#333,stroke-width:2px,color:#fff
-    style E fill:#f39c12,stroke:#333,stroke-width:2px,color:#fff
+    A["Poller 1s Timer"] -->|poll| B["GetPlayerInfo playerctl"]
+    B -->|media data| C["Channel Buffer: 100"]
+    C -->|broadcast| D["WebSocket Writer"]
+    D -->|JSON| E["Web Client"]
 ```
 
 ---
@@ -340,12 +329,12 @@ func Handle() {
 
 ### Recommended Intervals
 
-| Use Case | Interval | Reason | CPU Impact |
-|----------|----------|--------|------------|
-| 🎵 Media Player | 1s | Real-time feel | Low |
-| 📊 System Stats | 5s | Balanced updates | Minimal |
-| 🌐 Network Info | 10s | Reduce overhead | Very Low |
-| 🔋 Battery Status | 30s | Slow-changing data | Negligible |
+| Use Case          | Interval | Reason             | CPU Impact |
+| ----------------- | -------- | ------------------ | ---------- |
+| 🎵 Media Player   | 1s       | Real-time feel     | Low        |
+| 📊 System Stats   | 5s       | Balanced updates   | Minimal    |
+| 🌐 Network Info   | 10s      | Reduce overhead    | Very Low   |
+| 🔋 Battery Status | 30s      | Slow-changing data | Negligible |
 
 ---
 

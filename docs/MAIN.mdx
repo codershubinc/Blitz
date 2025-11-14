@@ -173,28 +173,21 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 ## Application Flow
 
-```mermaid
+````mermaid
 graph TD
-    A[main Start] --> B[Load .env file<br/>godotenv.Load]
+    A["main() Start"] --> B["Load .env file"]
     B --> C[Setup Routes]
-    C --> D[Register /ws handler]
-    C --> E[Register / handler]
-    D --> F[Start Media Poller<br/>go poller.Handle]
+    C --> D["Register /ws handler"]
+    C --> E["Register / handler"]
+    D --> F["Start Media Poller"]
     E --> F
-    F --> G[Start HTTP Server<br/>ListenAndServe :8765]
-    G --> H{Incoming Request?}
-    H -->|WebSocket| I[/ws Handler]
-    H -->|HTTP GET /| J[Serve index.html]
-    I --> K[Real-time Communication]
-    J --> L[Web Client Interface]
-
-    style A fill:#667eea,stroke:#333,stroke-width:2px,color:#fff
-    style G fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-    style K fill:#764ba2,stroke:#333,stroke-width:2px,color:#fff
-    style L fill:#f39c12,stroke:#333,stroke-width:2px,color:#fff
-```
-
----
+    F --> G["Start HTTP Server :8765"]
+    G --> H{"Incoming Request?"}
+    H -->|WebSocket| I["/ws Handler"]
+    H -->|"HTTP GET /"| J["Serve index.html"]
+    I --> K["Real-time Communication"]
+    J --> L["Web Client Interface"]
+```---
 
 ## Configuration
 
@@ -225,6 +218,7 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/spotify/callback
 
 ````
+
   </Tabs.Tab>
   <Tabs.Tab>
 ```bash
@@ -233,9 +227,11 @@ LOCAL_HOST_IP=
 LOCAL_HOST_PORT=
 
 # Spotify API Configuration
+
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 SPOTIFY_REDIRECT_URI=
+
 ## 🚀 Running the Application
 
 <Tabs items={['Development', 'Production', 'Docker']}>
@@ -245,7 +241,7 @@ SPOTIFY_REDIRECT_URI=
 ```bash
 # Run directly with go
 go run main.go
-````
+```
 
 Expected output:
 
@@ -349,21 +345,28 @@ ws://127.0.0.1:8765/ws
 
 ```mermaid
 graph TB
-    subgraph "HTTP Server :8765"
-        Server[HTTP Server<br/>127.0.0.1:8765]
-    end
+    Server["HTTP Server 127.0.0.1:8765"]
+    RouteHome["GET / Static Files"]
+    RouteWS["/ws WebSocket"]
+    HTML["index.html WebSocket Client"]
+    WSHandler["WebSocket Handler Real-time Comm"]
+    Channel["Shared Channel Buffer: 100"]
+    Poller["Media Poller Interval: 1s"]
 
-    subgraph "Routes"
-        RouteHome[GET /<br/>Static Files]
-        RouteWS[/ws<br/>WebSocket]
-    end
+    Server --> RouteHome
+    Server --> RouteWS
+    RouteHome --> HTML
+    RouteWS --> WSHandler
+    WSHandler <--> Channel
+    Poller --> Channel
+    HTML -.WebSocket Connection.-> WSHandler
+```
 
-    subgraph "Frontend"
+---
+
 ## 🐛 Error Scenarios
 
-<Callout type="error">
-Common errors and solutions
-</Callout>
+<Callout type="error">Common errors and solutions</Callout>
 
 ### .env File Missing
 
@@ -377,7 +380,8 @@ Common errors and solutions
 
 Warning: .env file not found, using system environment variables
 
-````
+```
+
   </Tabs.Tab>
   <Tabs.Tab>
 **Fix**:
@@ -387,27 +391,28 @@ cp .env.example .env
 ## ✅ Best Practices
 
 <Callout type="tip" emoji="💡">
-Follow these guidelines for optimal development
+  Follow these guidelines for optimal development
 </Callout>
 
 ### DO ✅
 
-| Practice | Reason |
-|----------|--------|
-| ✅ Set environment variables in `.env` | Configuration management |
-| ✅ Use `go run main.go` for development | Fast iteration |
-| ✅ Build binary for production | Better performance |
-| ✅ Monitor logs for errors | Early problem detection |
-| ✅ Use version control (git) | Track changes |
+| Practice                                | Reason                   |
+| --------------------------------------- | ------------------------ |
+| ✅ Set environment variables in `.env`  | Configuration management |
+| ✅ Use `go run main.go` for development | Fast iteration           |
+| ✅ Build binary for production          | Better performance       |
+| ✅ Monitor logs for errors              | Early problem detection  |
+| ✅ Use version control (git)            | Track changes            |
 
 ### DON'T ❌
 
-| Practice | Risk |
-|----------|------|
-| ❌ Commit `.env` file to git | Security - exposes credentials |
-| ❌ Run as root | Security vulnerability |
-| ❌ Expose to public internet without security | Attack surface |
-| ❌ Hardcode configuration | Inflexibility |dy in use
+| Practice                                      | Risk                           |
+| --------------------------------------------- | ------------------------------ | --------- |
+| ❌ Commit `.env` file to git                  | Security - exposes credentials |
+| ❌ Run as root                                | Security vulnerability         |
+| ❌ Expose to public internet without security | Attack surface                 |
+| ❌ Hardcode configuration                     | Inflexibility                  | dy in use |
+
 ````
 
   </Tabs.Tab>
@@ -450,15 +455,22 @@ mkdir -p temp/web
 
 ```
   </Tabs.Tab>
-</Tabs>,color:#fff
-    style WSHandler fill:#764ba2,stroke:#333,stroke-width:2px,color:#fff
-    style Channel fill:#e74c3c,stroke:#333,stroke-width:2px,color:#fff
-    style Poller fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
-```
+</Tabs>
 
 ---
 
 ## Goroutines
+
+```mermaid
+graph TD
+    Main["main goroutine"] -->|spawns| Poller["Poller goroutine"]
+    Main -->|blocks on| Server["HTTP Server"]
+    Server -->|new connection| Handler["WebSocket Handler"]
+    Handler -->|spawns| Writer["Writer goroutine"]
+    Handler -->|runs| Reader["Reader loop"]
+    Poller -->|writes to| Channel["Shared Channel"]
+    Channel -->|reads from| Writer
+```
 
 ### Media Poller Goroutine
 
@@ -550,5 +562,6 @@ import (
 
 ---
 
-**Last Updated**: November 14, 2025  
+**Last Updated**: November 14, 2025
 **Version**: 1.0.0
+````
