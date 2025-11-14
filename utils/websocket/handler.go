@@ -26,6 +26,15 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Failed to get response channel", http.StatusInternalServerError)
 		return
 	}
+
+	// Writer goroutine - sends messages to client
+	go func() {
+		for response := range chh {
+			if err := conn.WriteJSON(response); err != nil {
+				break
+			}
+		}
+	}()
  
 
 	// Reader goroutine - receives messages from client

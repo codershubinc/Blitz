@@ -7,9 +7,13 @@
 3. Add redirect URI: `http://localhost:8765/spotify/callback`
 4. Copy your Client ID and Client Secret
 5. Create `.env` file from `.env.example`:
+
    ```bash
+
    cp .env.example .env
+
    ```
+
 6. Add your credentials to `.env` file
 
 ## Environment Variables

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Blitz/utils/poller"
 	"Blitz/utils/websocket"
 	"fmt"
 	"log"
@@ -15,11 +16,14 @@ func main() {
 	http.HandleFunc("/ws", websocket.Handle)
 	http.HandleFunc("/", serveHome)
 
+	go  poller.Handle()
+
 	// Start the server (this blocks forever)
 	fmt.Println("Starting server on http://0.0.0.0:8765")
 	fmt.Println("WebSocket endpoint: ws://localhost:8765/ws")
 	fmt.Println("Press Ctrl+C to stop the server")
 	localAddr := os.Getenv("LOCAL_HOST_IP") + ":" + os.Getenv("LOCAL_HOST_PORT")
+	fmt.Println("lo" , localAddr)
 
 	if err := http.ListenAndServe(localAddr, nil); err != nil {
 		log.Fatal("Server error:", err)
@@ -35,5 +39,5 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	http.ServeFile(w, r, "web/index.html")
+	http.ServeFile(w, r, "temp/web/index.html")
 }
