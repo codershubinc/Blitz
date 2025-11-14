@@ -17,7 +17,7 @@ var sharedChannel chan models.ServerResponse
 func Handle(res, req) {
     // All clients read from the SAME channel
     chh := GetChannel()
-    
+
     go func() {
         for response := range chh {
             conn.WriteJSON(response)  // Only ONE client gets this message
@@ -74,6 +74,7 @@ func BroadcastMessage(msg models.ServerResponse) {
 ### Key Components
 
 #### 1. Client Structure
+
 ```go
 type Client struct {
     Conn    *websocket.Conn           // WebSocket connection
@@ -83,6 +84,7 @@ type Client struct {
 ```
 
 #### 2. Client Registry
+
 ```go
 var (
     clients   = make(map[string]*Client)  // Map of all connected clients
@@ -91,6 +93,7 @@ var (
 ```
 
 #### 3. Registration System
+
 ```go
 func RegisterClient(client *Client) {
     clientsMu.Lock()
@@ -111,11 +114,12 @@ func UnregisterClient(clientID string) {
 ```
 
 #### 4. True Broadcast Function
+
 ```go
 func BroadcastMessage(msg models.ServerResponse) {
     clientsMu.RLock()
     defer clientsMu.RUnlock()
-    
+
     for _, client := range clients {
         select {
         case client.Send <- msg:
@@ -134,21 +138,22 @@ func BroadcastMessage(msg models.ServerResponse) {
 ## Handler Changes
 
 ### Before
+
 ```go
 func Handle(res http.ResponseWriter, req *http.Request) {
     conn, _ := CreateWebSocketConnection(res, req)
     defer conn.Close()
-    
+
     // Get shared channel (same for all clients)
     chh := GetChannel()
-    
+
     // Writer goroutine reads from shared channel
     go func() {
         for response := range chh {
             conn.WriteJSON(response)  // Only this client OR another gets it
         }
     }()
-    
+
     // Reader loop
     for {
         var msg map[string]interface{}
@@ -159,27 +164,28 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 ```
 
 ### After
+
 ```go
 func Handle(res http.ResponseWriter, req *http.Request) {
     conn, _ := CreateWebSocketConnection(res, req)
     defer conn.Close()
-    
+
     // Create unique client with personal channel
     client := &Client{
         Conn: conn,
         Send: make(chan models.ServerResponse, 100),
         ID:   fmt.Sprintf("%s-%d", req.RemoteAddr, time.Now().UnixNano()),
     }
-    
+
     // Register in global registry
     RegisterClient(client)
     defer UnregisterClient(client.ID)
-    
+
     // Send welcome message
     SendWebSocketMessage(models.ServerResponse{
         Message: "Welcome to the WebSocket server!",
     }, conn)
-    
+
     // Writer goroutine reads from THIS CLIENT'S channel
     writerDone := make(chan struct{})
     go func() {
@@ -191,7 +197,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
             }
         }
     }()
-    
+
     // Reader loop
     for {
         var msg map[string]interface{}
@@ -202,7 +208,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
         log.Printf("📨 Received from %s: %+v", client.ID, msg)
         HandlePingPong(conn, msg)
     }
-    
+
     // Wait for writer to finish
     <-writerDone
 }
@@ -213,6 +219,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 ## Message Flow Comparison
 
 ### Old Flow (Round-Robin) ❌
+
 ```
 ┌─────────┐
 │ Poller  │
@@ -232,6 +239,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 ```
 
 ### New Flow (True Broadcast) ✅
+
 ```
 ┌─────────┐
 │ Poller  │
@@ -262,27 +270,32 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 ## Benefits of New Implementation
 
 ### 1. True Broadcast
+
 ✅ Every client receives every message simultaneously
 ✅ No missed updates or round-robin issues
 ✅ Real-time synchronization across all clients
 
 ### 2. Better Resource Management
+
 ✅ Per-client buffering (100 messages per client)
 ✅ Automatic cleanup on disconnect
 ✅ No memory leaks from orphaned channels
 
 ### 3. Improved Reliability
+
 ✅ Client isolation - one slow client doesn't block others
 ✅ Non-blocking sends with channel full detection
 ✅ Graceful disconnection handling
 
 ### 4. Better Observability
+
 ✅ Unique client IDs for tracking
 ✅ Connection/disconnection logs
 ✅ Broadcast statistics
 ✅ Per-client error logging
 
 ### 5. Thread Safety
+
 ✅ `sync.RWMutex` for concurrent access
 ✅ Safe client registration/unregistration
 ✅ Race-free message broadcasting
@@ -292,16 +305,19 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 ## Performance Characteristics
 
 ### Memory Usage
+
 - **Before**: 1 shared channel (100 buffer)
 - **After**: N client channels (100 buffer each)
 - **Trade-off**: More memory but true broadcast functionality
 
 ### CPU Usage
+
 - **Before**: Single channel, one goroutine receives
 - **After**: N channels, all goroutines receive in parallel
 - **Trade-off**: Slightly higher CPU but better concurrency
 
 ### Latency
+
 - **Before**: Unpredictable (depends on which client is ready)
 - **After**: Consistent (all clients get messages immediately)
 - **Improvement**: ✅ Predictable, low-latency delivery
@@ -329,6 +345,7 @@ func WriteChannelMessage(msg models.ServerResponse) {
 ## Testing the Changes
 
 ### Multi-Client Test
+
 1. Open browser tab 1: Connect to WebSocket
 2. Open browser tab 2: Connect to WebSocket
 3. Open browser tab 3: Connect to WebSocket
@@ -336,6 +353,7 @@ func WriteChannelMessage(msg models.ServerResponse) {
 5. **Expected**: All 3 tabs show the same media info updates in real-time
 
 ### Logs to Check
+
 ```bash
 # When clients connect:
 ✅ Client registered: 192.168.1.100-1731585123456 (Total clients: 1)
@@ -354,11 +372,13 @@ func WriteChannelMessage(msg models.ServerResponse) {
 ## Migration Notes
 
 ### No Breaking Changes
+
 - Existing code using `WriteChannelMessage()` continues to work
 - Legacy functions redirect to new broadcast system
 - Automatic migration - no code changes needed in poller
 
 ### Recommended Updates
+
 1. ✅ Already done: `channel.go` - New broadcast implementation
 2. ✅ Already done: `handler.go` - Per-client channel handling
 3. ⚠️ Optional: Update `poller/handler.go` to use `BroadcastMessage()` directly
@@ -368,6 +388,7 @@ func WriteChannelMessage(msg models.ServerResponse) {
 ## Concurrency Model
 
 ### Goroutines per Client
+
 ```
 Client Connection:
 ├─ Main Handler (blocking read)
@@ -377,6 +398,7 @@ Total: 2 goroutines per client
 ```
 
 ### Thread Safety
+
 - **Client Registry**: Protected by `sync.RWMutex`
 - **Read Operations**: Use `RLock()` (multiple readers allowed)
 - **Write Operations**: Use `Lock()` (exclusive access)
@@ -387,7 +409,9 @@ Total: 2 goroutines per client
 ## Files Modified
 
 ### 1. `/utils/websocket/channel.go`
+
 **Changes:**
+
 - Added `Client` struct with per-client channel
 - Added `clients` map registry with mutex
 - Implemented `RegisterClient()` function
@@ -397,7 +421,9 @@ Total: 2 goroutines per client
 - Deprecated old shared channel functions (kept for compatibility)
 
 ### 2. `/utils/websocket/handler.go`
+
 **Changes:**
+
 - Create unique `Client` instance per connection
 - Register client on connect, unregister on disconnect
 - Use per-client channel instead of shared channel
@@ -410,6 +436,7 @@ Total: 2 goroutines per client
 ## Conclusion
 
 The upgrade from shared channel to broadcast pattern provides:
+
 - ✅ **Correctness**: All clients receive all messages
 - ✅ **Scalability**: Supports unlimited concurrent clients
 - ✅ **Reliability**: Better error handling and cleanup
