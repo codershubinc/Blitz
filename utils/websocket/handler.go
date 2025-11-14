@@ -2,8 +2,10 @@ package websocket
 
 import (
 	"Blitz/models"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func Handle(res http.ResponseWriter, req *http.Request) {
@@ -14,25 +16,34 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 	}
 	defer conn.Close()
 
+	// Create unique client
+	client := &Client{
+		Conn: conn,
+		Send: make(chan models.ServerResponse, 100),
+		ID:   fmt.Sprintf("%s-%d", req.RemoteAddr, time.Now().UnixNano()),
+	}
+
+	// Register client
+	RegisterClient(client)
+	defer UnregisterClient(client.ID)
+
+	// Send welcome message
 	msg := models.ServerResponse{
 		Message: "Welcome to the WebSocket server!",
 	}
 	if err := SendWebSocketMessage(msg, conn); err != nil {
-		http.Error(res, "Failed to send welcome message", http.StatusInternalServerError)
+		log.Printf("Failed to send welcome message to %s", client.ID)
 		return
 	}
 
-	chh := GetChannel()
-	if chh == nil {
-		http.Error(res, "Failed to get response channel", http.StatusInternalServerError)
-		return
-	}
-
-	// Writer goroutine - sends messages to client
+	// Writer goroutine - sends messages to this specific client
+	writerDone := make(chan struct{})
 	go func() {
-		for response := range chh {
+		defer close(writerDone)
+		for response := range client.Send {
 			if err := conn.WriteJSON(response); err != nil {
-				continue
+				log.Printf("Error writing to client %s: %v", client.ID, err)
+				return
 			}
 		}
 	}()
@@ -41,11 +52,15 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 	for {
 		var msg map[string]interface{}
 		if err := conn.ReadJSON(&msg); err != nil {
-			continue
+			log.Printf("Client %s disconnected: %v", client.ID, err)
+			break
 		}
-		log.Printf("Received message: %+v\n", msg)
+		log.Printf("📨 Received from %s: %+v", client.ID, msg)
 
 		// Handle ping/pong
 		HandlePingPong(conn, msg)
 	}
+
+	// Wait for writer to finish
+	<-writerDone
 }

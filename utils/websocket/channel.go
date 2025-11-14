@@ -4,61 +4,83 @@ import (
 	"Blitz/models"
 	"log"
 	"sync"
+
+	"github.com/gorilla/websocket"
 )
+
+type Client struct {
+	Conn *websocket.Conn
+	Send chan models.ServerResponse
+	ID   string
+}
 
 var (
-	sharedChannel chan models.ServerResponse
-	once          sync.Once
-	mu            sync.RWMutex
+	clients   = make(map[string]*Client)
+	clientsMu sync.RWMutex
 )
 
-func CreateChannel() chan models.ServerResponse {
-	once.Do(func() {
-		sharedChannel = make(chan models.ServerResponse, 100)
-		log.Println("Channel created successfully")
-	})
-	return sharedChannel
+// RegisterClient adds a new client to the broadcast list
+func RegisterClient(client *Client) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+	clients[client.ID] = client
+	log.Printf("✅ Client registered: %s (Total clients: %d)", client.ID, len(clients))
 }
 
-func GetChannel() chan models.ServerResponse {
-	mu.RLock()
-	defer mu.RUnlock()
-	if sharedChannel == nil {
-		sharedChannel = make(chan models.ServerResponse)
-		log.Println("Channel created inside GetChannel")
-	} else {
-		log.Println("Channel already exists, returning existing channel")
-	}
-	return sharedChannel
-}
-func CloseChannel() {
-	mu.Lock()
-	defer mu.Unlock()
-	if sharedChannel != nil {
-		close(sharedChannel)
-		sharedChannel = nil
-		log.Println("Channel closed and set to nil")
-	} else {
-		log.Println("Channel is already nil, nothing to close")
+// UnregisterClient removes a client from the broadcast list
+func UnregisterClient(clientID string) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+	if client, ok := clients[clientID]; ok {
+		close(client.Send)
+		delete(clients, clientID)
+		log.Printf("❌ Client unregistered: %s (Total clients: %d)", clientID, len(clients))
 	}
 }
 
-func WriteChannelMessage(msg models.ServerResponse) {
-	mu.RLock()
-	ch := sharedChannel
-	defer mu.RUnlock()
+// BroadcastMessage sends a message to all connected clients
+func BroadcastMessage(msg models.ServerResponse) {
+	clientsMu.RLock()
+	defer clientsMu.RUnlock()
 
-
-	if ch == nil {
-		log.Println("Channel is nil, cannot send message")
+	if len(clients) == 0 {
+		log.Println("⚠️  No clients connected, message not sent")
 		return
 	}
 
-	select {
-	case ch <- msg:
-		// log.Println("Message sent to channel:", msg)
-	default:
-		log.Println("Channel is full, message not sent:", msg)
+	for _, client := range clients {
+		select {
+		case client.Send <- msg:
+			// Message sent successfully
+		default:
+			log.Printf("⚠️  Client %s channel full, skipping message", client.ID)
+		}
 	}
+	log.Printf("📡 Broadcast to %d clients", len(clients))
+}
 
+// GetClientCount returns the number of connected clients
+func GetClientCount() int {
+	clientsMu.RLock()
+	defer clientsMu.RUnlock()
+	return len(clients)
+}
+
+// Legacy functions for backward compatibility
+func CreateChannel() chan models.ServerResponse {
+	log.Println("⚠️  CreateChannel is deprecated, using broadcast pattern")
+	return make(chan models.ServerResponse, 100)
+}
+
+func GetChannel() chan models.ServerResponse {
+	log.Println("⚠️  GetChannel is deprecated, using broadcast pattern")
+	return make(chan models.ServerResponse, 100)
+}
+
+func CloseChannel() {
+	log.Println("⚠️  CloseChannel is deprecated, using broadcast pattern")
+}
+
+func WriteChannelMessage(msg models.ServerResponse) {
+	BroadcastMessage(msg)
 }
