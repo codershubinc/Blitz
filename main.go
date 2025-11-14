@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Blitz/utils/poller"
-	"Blitz/utils/websocket"
+	"Quazaar/utils/poller"
+	"Quazaar/utils/websocket"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,7 +17,7 @@ func main() {
 		log.Println("Warning: .env file not found, using system environment variables")
 	}
 
-	fmt.Println("Hello Blitz Server ...")
+	fmt.Println("Hello Quazaar Server ...")
 
 	// Setup HTTP routes
 	http.HandleFunc("/ws", websocket.Handle)

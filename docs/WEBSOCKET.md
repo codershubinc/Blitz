@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `websocket` package provides real-time bidirectional communication between the Blitz server and clients. It handles connection management, message routing, ping/pong, and channel-based broadcasting.
+The `websocket` package provides real-time bidirectional communication between the Quazaar server and clients. It handles connection management, message routing, ping/pong, and channel-based broadcasting.
 
 ---
 
@@ -475,7 +475,7 @@ func HandlePingPong(conn *websocket.Conn, msg map[string]interface{}) {
   "message": "pong",
   "data": {
     "timestamp": 1699999999,
-    "server": "Blitz WebSocket"
+    "server": "Quazaar WebSocket"
   }
 }
 ```
@@ -489,7 +489,7 @@ func SendPong(conn *websocket.Conn) {
         Message: "pong",
         Data: map[string]interface{}{
             "timestamp": time.Now().Unix(),
-            "server":    "Blitz WebSocket",
+            "server":    "Quazaar WebSocket",
         },
     }
 
@@ -557,7 +557,7 @@ type ServerResponse struct {
   "message": "pong",
   "data": {
     "timestamp": 1699999999,
-    "server": "Blitz WebSocket"
+    "server": "Quazaar WebSocket"
   }
 }
 ```

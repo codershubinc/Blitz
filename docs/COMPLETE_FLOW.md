@@ -1,10 +1,10 @@
-# Complete Application Flow - Blitz WebSocket
+# Complete Application Flow - Quazaar WebSocket
 
 ## System Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         BLITZ APPLICATION                       │
+│                         QUAZAAR APPLICATION                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌──────────────┐         ┌──────────────┐     ┌─────────────┐ │

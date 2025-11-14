@@ -11,7 +11,6 @@ func Poller(interval time.Duration, quit <-chan struct{}, fn func()) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	// Run immediately on start
 	fn()
 
 	for {

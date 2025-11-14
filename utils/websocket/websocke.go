@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"Blitz/models"
+	"Quazaar/models"
 	"log"
 	"net/http"
 

@@ -1,9 +1,9 @@
 package poller
 
 import (
-	"Blitz/models"
-	"Blitz/utils"
-	"Blitz/utils/websocket"
+	"Quazaar/models"
+	"Quazaar/utils"
+	"Quazaar/utils/websocket"
 	"fmt"
 	"time"
 )

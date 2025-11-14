@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"Blitz/models"
+	"Quazaar/models"
 	"log"
 	"sync"
 
@@ -38,7 +38,40 @@ func UnregisterClient(clientID string) {
 	}
 }
 
-// BroadcastMessage sends a message to all connected clients
+// CleanClientBuffer drains all pending messages from a client's channel
+func CleanClientBuffer(clientID string) {
+	clientsMu.RLock()
+	client, exists := clients[clientID]
+	clientsMu.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	// Drain all pending messages
+	for {
+		select {
+		case <-client.Send:
+			// Keep draining
+		default:
+			// Channel is empty
+			log.Printf("🧹 Cleaned buffer for client %s", clientID)
+			return
+		}
+	}
+}
+
+// CleanAllBuffers drains all pending messages from all clients
+func CleanAllBuffers() {
+	clientsMu.RLock()
+	defer clientsMu.RUnlock()
+
+	for clientID := range clients {
+		go CleanClientBuffer(clientID)
+	}
+}
+
+// BroadcastMessage sends a message to all connected clients (fresh data only)
 func BroadcastMessage(msg models.ServerResponse) {
 	clientsMu.RLock()
 	defer clientsMu.RUnlock()
@@ -49,14 +82,16 @@ func BroadcastMessage(msg models.ServerResponse) {
 	}
 
 	for _, client := range clients {
+		// Non-blocking send - skip if client can't receive (too slow)
 		select {
 		case client.Send <- msg:
 			// Message sent successfully
 		default:
-			log.Printf("⚠️  Client %s channel full, skipping message", client.ID)
+			// Client can't receive - it's too slow, skip this message
+			log.Printf("⚠️  Client %s is too slow, skipping message (will get fresh data next cycle)", client.ID)
 		}
 	}
-	log.Printf("📡 Broadcast to %d clients", len(clients))
+	// log.Printf("📡 Broadcast to %d clients", len(clients))
 }
 
 // GetClientCount returns the number of connected clients

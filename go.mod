@@ -1,4 +1,4 @@
-module Blitz
+module Quazaar
 
 go 1.25.3
 

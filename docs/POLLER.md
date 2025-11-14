@@ -12,9 +12,9 @@ The `poller` package provides generic polling utilities for executing functions 
 - **Location**: `utils/poller/`
 - **Purpose**: Periodic task execution with graceful shutdown
 - **Dependencies**:
-  - `Blitz/models` - Data structures
-  - `Blitz/utils` - Media info utilities
-  - `Blitz/utils/websocket` - Channel communication
+  - `Quazaar/models` - Data structures
+  - `Quazaar/utils` - Media info utilities
+  - `Quazaar/utils/websocket` - Channel communication
 
 ---
 
@@ -236,7 +236,7 @@ graph LR
 package main
 
 import (
-    "Blitz/utils/poller"
+    "Quazaar/utils/poller"
     "fmt"
     "time"
 )
@@ -259,7 +259,7 @@ func main() {
 package main
 
 import (
-    "Blitz/utils/poller"
+    "Quazaar/utils/poller"
 )
 
 func main() {

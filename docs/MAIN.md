@@ -1,6 +1,6 @@
 ---
 title: Main Application Documentation
-description: Entry point and server configuration for Blitz
+description: Entry point and server configuration for Quazaar
 tags: [main, server, http, configuration]
 ---
 
@@ -11,7 +11,7 @@ import { Tabs } from "nextra/components";
 # 🚀 Main Application Documentation
 
 <Callout type="info">
-  `main.go` is the entry point of the Blitz server application. It initializes
+  `main.go` is the entry point of the Quazaar server application. It initializes
   the HTTP server, sets up routes, and starts the media poller goroutine.
 </Callout>
 
@@ -19,11 +19,11 @@ import { Tabs } from "nextra/components";
 
 ## 📦 Package Information
 
-| Property         | Value                                                                     |
-| ---------------- | ------------------------------------------------------------------------- |
-| **Package**      | `main`                                                                    |
-| **File**         | `main.go`                                                                 |
-| **Dependencies** | `Blitz/utils/poller`, `Blitz/utils/websocket`, `github.com/joho/godotenv` |
+| Property         | Value                                                                         |
+| ---------------- | ----------------------------------------------------------------------------- |
+| **Package**      | `main`                                                                        |
+| **File**         | `main.go`                                                                     |
+| **Dependencies** | `Quazaar/utils/poller`, `Quazaar/utils/websocket`, `github.com/joho/godotenv` |
 
 ---
 
@@ -64,7 +64,8 @@ Blocks on `http.ListenAndServe()` at configured address
 | `LOCAL_HOST_PORT` | Server port         | `8765`      |
 
 <Tabs items={['Go Code', 'Explanation']}>
-  <Tabs.Tab>
+<Tabs.Tab>
+
 ```go
 func main() {
     // Load .env file
@@ -87,16 +88,18 @@ func main() {
 
 }
 
-````
-  </Tabs.Tab>
-  <Tabs.Tab>
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
 **Flow Explanation**:
+
 1. **godotenv.Load()** - Reads `.env` file and sets environment variables
 2. **http.HandleFunc()** - Registers HTTP handlers for routes
 3. **go poller.Handle()** - Starts background goroutine for media polling
 4. **http.ListenAndServe()** - Blocks and starts accepting HTTP connections
-  </Tabs.Tab>
-</Tabs>
+   </Tabs.Tab>
+   </Tabs>
 
 <Callout type="warning" emoji="⚠️">
 **Error Handling**: If `.env` file is missing, logs warning but continues with system environment variables. If server fails to start, application exits with fatal error.
@@ -112,29 +115,30 @@ func main() {
 
 **Parameters**:
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `w` | `http.ResponseWriter` | Response writer |
-| `r` | `*http.Request` | HTTP request |
+| Parameter | Type                  | Description     |
+| --------- | --------------------- | --------------- |
+| `w`       | `http.ResponseWriter` | Response writer |
+| `r`       | `*http.Request`       | HTTP request    |
 
 **Route Details**:
 
-| Property | Value |
-|----------|-------|
-| **Path** | `/` |
-| **Method** | `GET` only |
+| Property   | Value                 |
+| ---------- | --------------------- |
+| **Path**   | `/`                   |
+| **Method** | `GET` only            |
 | **Serves** | `temp/web/index.html` |
 
 **Response Codes**:
 
-| Code | Status | Condition |
-|------|--------|-----------|
-| 🟢 `200` | OK | File served successfully |
-| 🔴 `404` | Not Found | Path is not `/` |
-| 🟡 `405` | Method Not Allowed | Method is not `GET` |
+| Code     | Status             | Condition                |
+| -------- | ------------------ | ------------------------ |
+| 🟢 `200` | OK                 | File served successfully |
+| 🔴 `404` | Not Found          | Path is not `/`          |
+| 🟡 `405` | Method Not Allowed | Method is not `GET`      |
 
 <Tabs items={['Code', 'Security Notes']}>
-  <Tabs.Tab>
+<Tabs.Tab>
+
 ```go
 func serveHome(w http.ResponseWriter, r *http.Request) {
     if r.URL.Path != "/" {
@@ -147,9 +151,10 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
     }
     http.ServeFile(w, r, "temp/web/index.html")
 }
-````
+```
 
-  </Tabs.Tab>
+</Tabs.Tab>
+
 ## 🛣️ Server Routes
 
 | Route | Handler            | Purpose                       | Type           |
@@ -219,9 +224,10 @@ SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/spotify/callback
 
 ````
 
-  </Tabs.Tab>
-  <Tabs.Tab>
-```bash
+</Tabs.Tab>
+<Tabs.Tab>
+
+````bash
 # Localhost Configuration
 LOCAL_HOST_IP=
 LOCAL_HOST_PORT=
@@ -241,20 +247,20 @@ SPOTIFY_REDIRECT_URI=
 ```bash
 # Run directly with go
 go run main.go
-```
+````
 
 Expected output:
 
 ```
-Hello Blitz Server ...
+Hello Quazaar Server ...
 Starting server on http://0.0.0.0:8765
 WebSocket endpoint: ws://localhost:8765/ws
 Press Ctrl+C to stop the server
 lo 127.0.0.1:8765
 ```
 
-  </Tabs.Tab>
-  <Tabs.Tab>
+</Tabs.Tab>
+<Tabs.Tab>
 **Production Build**
 
 ```bash
@@ -284,9 +290,10 @@ Test with cURL:
 curl http://127.0.0.1:8765/
 ````
 
-  </Tabs.Tab>
-  <Tabs.Tab>
+</Tabs.Tab>
+<Tabs.Tab>
 Connect WebSocket:
+
 ```bash
 # Install wscat
 npm install -g wscat
@@ -296,12 +303,15 @@ npm install -g wscat
 wscat -c ws://127.0.0.1:8765/ws
 
 ```
-  </Tabs.Tab>
+
+</Tabs.Tab>
 </Tabs>uild image
-docker build -t blitz:latest .
+docker build -t quazaar:latest .
 
 # Run container
-docker run -p 8765:8765 --env-file .env blitz:latest
+
+docker run -p 8765:8765 --env-file .env quazaar:latest
+
 ```
 
   </Tabs.Tab>
@@ -312,7 +322,7 @@ go run main.go
 ### Expected Output
 
 ```
-Hello Blitz Server ...
+Hello Quazaar Server ...
 Starting server on http://0.0.0.0:8765
 WebSocket endpoint: ws://localhost:8765/ws
 Press Ctrl+C to stop the server
@@ -371,7 +381,7 @@ graph TB
 ### .env File Missing
 
 <Tabs items={['Problem', 'Solution']}>
-  <Tabs.Tab>
+<Tabs.Tab>
 **Behavior**: Logs warning, continues with system env vars
 
 **Impact**: Server may fail to start if vars not set
@@ -382,9 +392,10 @@ Warning: .env file not found, using system environment variables
 
 ```
 
-  </Tabs.Tab>
-  <Tabs.Tab>
+</Tabs.Tab>
+<Tabs.Tab>
 **Fix**:
+
 ```bash
 # Create .env file
 cp .env.example .env
@@ -413,11 +424,12 @@ cp .env.example .env
 | ❌ Expose to public internet without security | Attack surface                 |
 | ❌ Hardcode configuration                     | Inflexibility                  | dy in use |
 
-````
+```
 
-  </Tabs.Tab>
-  <Tabs.Tab>
+</Tabs.Tab>
+<Tabs.Tab>
 **Fix Option 1** - Kill process:
+
 ```bash
 lsof -ti:8765 | xargs kill -9
 ```
@@ -429,20 +441,21 @@ lsof -ti:8765 | xargs kill -9
 LOCAL_HOST_PORT=8766
 ```
 
-  </Tabs.Tab>
+</Tabs.Tab>
 </Tabs>
 
 ### Static File Not Found
 
 <Tabs items={['Problem', 'Solution']}>
-  <Tabs.Tab>
+<Tabs.Tab>
 **Error**: Browser shows 404 or blank page
 
 **Cause**: `temp/web/index.html` doesn't exist
 
-  </Tabs.Tab>
-  <Tabs.Tab>
+</Tabs.Tab>
+<Tabs.Tab>
 **Fix**:
+
 ```bash
 # Ensure file exists
 ls -la temp/web/index.html
@@ -454,7 +467,8 @@ mkdir -p temp/web
 # ... create index.html
 
 ```
-  </Tabs.Tab>
+
+</Tabs.Tab>
 </Tabs>
 
 ---
@@ -534,8 +548,8 @@ import "github.com/joho/godotenv"  // Environment variable loading
 
 ```go
 import (
-    "Blitz/utils/poller"      // Media polling
-    "Blitz/utils/websocket"   // WebSocket handling
+    "Quazaar/utils/poller"      // Media polling
+    "Quazaar/utils/websocket"   // WebSocket handling
 )
 ```
 
@@ -564,4 +578,7 @@ import (
 
 **Last Updated**: November 14, 2025
 **Version**: 1.0.0
-````
+
+```
+
+```

@@ -1,15 +1,15 @@
-# Blitz Project Structure Guide
+# Quazaar Project Structure Guide
 
 ## Current Structure (As-Is)
 
 ```
-Blitz/
+Quazaar/
 ├── main.go                           # Entry point
 ├── go.mod, go.sum                    # Go modules
 ├── .env, .env.example                # Environment config
 ├── README.md                         # Project documentation
 ├── SPOTIFY_README.md                 # Spotify integration docs
-├── blitz                             # Compiled binary (gitignore)
+├── quazaar                          # Compiled binary (gitignore)
 │
 ├── models/                           # Data models
 │   └── server_responce.go            # WebSocket response structure
@@ -41,7 +41,7 @@ Blitz/
 │   └── spotify/                      # Cached Spotify artwork
 │
 └── release/                          # Release binaries
-    └── blitz_v0.0.1.2
+    └── quazaar_v0.0.1.2
 ```
 
 ---
@@ -62,7 +62,7 @@ utils/websocket → utils/poller → utils/websocket (CYCLE!)
 
 ### 3. **Binary in Root**
 
-- ❌ `blitz` binary should be in `bin/` or gitignored
+- ❌ `quazaar` binary should be in `bin/` or gitignored
 
 ### 4. **No Clear Boundaries**
 
@@ -76,7 +76,7 @@ utils/websocket → utils/poller → utils/websocket (CYCLE!)
 Reorganize `utils/` by domain:
 
 ```
-Blitz/
+Quazaar/
 ├── main.go
 ├── go.mod, go.sum
 ├── .env, .env.example
@@ -111,10 +111,10 @@ Blitz/
 │       ├── channel.go           # Channel management
 │       ├── connection.go        # Connection utilities
 │       └── commands/            # Command handlers
-│           └── ping.go          # Ping/pong handler
+│       └── ping.go          # Ping/pong handler
 │
 ├── bin/                         # Compiled binaries (gitignore)
-│   └── blitz
+│   └── quazaar
 │
 ├── web/
 │   └── index.html
@@ -137,9 +137,9 @@ Blitz/
 Go standard project layout:
 
 ```
-Blitz/
+Quazaar/
 ├── cmd/                              # Application entrypoints
-│   └── blitz/
+│   └── quazaar/
 │       └── main.go                   # Main entry point
 │
 ├── internal/                         # Private application code
@@ -213,7 +213,7 @@ Blitz/
 │   └── ARCHITECTURE.md
 │
 ├── bin/                              # Compiled binaries (gitignore)
-│   └── blitz
+│   └── quazaar
 │
 ├── tmp/                              # Temporary files (gitignore)
 │   └── spotify/
@@ -262,7 +262,7 @@ internal ← NEVER from outside ❌
 ```bash
 # Move binary
 mkdir -p bin
-mv blitz bin/
+mv quazaar bin/
 echo "bin/" >> .gitignore
 echo "tmp/" >> .gitignore
 
@@ -297,10 +297,10 @@ mv utils/spawnProcesses.go utils/system/process.go
 
 ```bash
 # Create new structure
-mkdir -p cmd/blitz internal/{handlers,services,models} pkg
+mkdir -p cmd/quazaar internal/{handlers,services,models} pkg
 
 # Move main.go
-mv main.go cmd/blitz/
+mv main.go cmd/quazaar/
 
 # Move and reorganize code
 # ... (detailed migration steps)

@@ -1,4 +1,4 @@
-# Blitz - Spotify Integration
+# Quazaar - Spotify Integration
 
 ## Setup Spotify API
 
@@ -37,8 +37,8 @@ export $(cat .env | xargs)
 export $(cat .env | xargs)
 
 # Build and run
-go build -o blitz
-./blitz
+go build -o quazaar
+./quazaar
 ```
 
 ## Authentication Flow
