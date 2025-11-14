@@ -4,24 +4,25 @@ description: Entry point and server configuration for Blitz
 tags: [main, server, http, configuration]
 ---
 
-import { Callout } from 'nextra/components'
-import { Steps } from 'nextra/components'
-import { Tabs } from 'nextra/components'
+import { Callout } from "nextra/components";
+import { Steps } from "nextra/components";
+import { Tabs } from "nextra/components";
 
 # 🚀 Main Application Documentation
 
 <Callout type="info">
-`main.go` is the entry point of the Blitz server application. It initializes the HTTP server, sets up routes, and starts the media poller goroutine.
+  `main.go` is the entry point of the Blitz server application. It initializes
+  the HTTP server, sets up routes, and starts the media poller goroutine.
 </Callout>
 
 ---
 
 ## 📦 Package Information
 
-| Property | Value |
-|----------|-------|
-| **Package** | `main` |
-| **File** | `main.go` |
+| Property         | Value                                                                     |
+| ---------------- | ------------------------------------------------------------------------- |
+| **Package**      | `main`                                                                    |
+| **File**         | `main.go`                                                                 |
 | **Dependencies** | `Blitz/utils/poller`, `Blitz/utils/websocket`, `github.com/joho/godotenv` |
 
 ---
@@ -31,31 +32,36 @@ import { Tabs } from 'nextra/components'
 ### `main()`
 
 <Callout type="default">
-**Description**: Entry point of the application. Initializes the server and starts all services.
+  **Description**: Entry point of the application. Initializes the server and
+  starts all services.
 </Callout>
 
 <Steps>
 
 ### Load Environment Variables
+
 Loads environment variables from `.env` file using `godotenv.Load()`
 
 ### Setup HTTP Routes
+
 Registers `/ws` for WebSocket and `/` for static files
 
 ### Start Media Poller
+
 Launches poller in a goroutine with `go poller.Handle()`
 
 ### Start HTTP Server
+
 Blocks on `http.ListenAndServe()` at configured address
 
 </Steps>
 
 **Environment Variables**:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LOCAL_HOST_IP` | Server bind address | `127.0.0.1` |
-| `LOCAL_HOST_PORT` | Server port | `8765` |
+| Variable          | Description         | Default     |
+| ----------------- | ------------------- | ----------- |
+| `LOCAL_HOST_IP`   | Server bind address | `127.0.0.1` |
+| `LOCAL_HOST_PORT` | Server port         | `8765`      |
 
 <Tabs items={['Go Code', 'Explanation']}>
   <Tabs.Tab>
@@ -78,8 +84,10 @@ func main() {
     if err := http.ListenAndServe(localAddr, nil); err != nil {
         log.Fatal("Server error:", err)
     }
+
 }
-```
+
+````
   </Tabs.Tab>
   <Tabs.Tab>
 **Flow Explanation**:
@@ -139,14 +147,16 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
     }
     http.ServeFile(w, r, "temp/web/index.html")
 }
-```
+````
+
   </Tabs.Tab>
 ## 🛣️ Server Routes
 
-| Route | Handler | Purpose | Type |
-|-------|---------|---------|------|
-| `/ws` | `websocket.Handle` | WebSocket connection endpoint | 🔌 WebSocket |
-| `/` | `serveHome` | WebSocket test client HTML | 📄 Static File |
+| Route | Handler            | Purpose                       | Type           |
+| ----- | ------------------ | ----------------------------- | -------------- |
+| `/ws` | `websocket.Handle` | WebSocket connection endpoint | 🔌 WebSocket   |
+| `/`   | `serveHome`        | WebSocket test client HTML    | 📄 Static File |
+
 ### WebSocket Route
 
 - **Path**: `/ws`
@@ -177,7 +187,7 @@ graph TD
     H -->|HTTP GET /| J[Serve index.html]
     I --> K[Real-time Communication]
     J --> L[Web Client Interface]
-    
+
     style A fill:#667eea,stroke:#333,stroke-width:2px,color:#fff
     style G fill:#28a745,stroke:#333,stroke-width:2px,color:#fff
     style K fill:#764ba2,stroke:#333,stroke-width:2px,color:#fff
@@ -198,7 +208,7 @@ graph TD
 ### Required Environment Variables
 
 <Callout type="warning">
-Create a `.env` file in the project root with the following variables:
+  Create a `.env` file in the project root with the following variables:
 </Callout>
 
 <Tabs items={['.env File', '.env.example', 'Shell Export']}>
@@ -209,10 +219,12 @@ LOCAL_HOST_IP=127.0.0.1
 LOCAL_HOST_PORT=8765
 
 # Spotify API Configuration (optional)
+
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/spotify/callback
-```
+
+````
   </Tabs.Tab>
   <Tabs.Tab>
 ```bash
@@ -233,9 +245,10 @@ SPOTIFY_REDIRECT_URI=
 ```bash
 # Run directly with go
 go run main.go
-```
+````
 
 Expected output:
+
 ```
 Hello Blitz Server ...
 Starting server on http://0.0.0.0:8765
@@ -243,6 +256,7 @@ WebSocket endpoint: ws://localhost:8765/ws
 Press Ctrl+C to stop the server
 lo 127.0.0.1:8765
 ```
+
   </Tabs.Tab>
   <Tabs.Tab>
 **Production Build**
@@ -263,14 +277,17 @@ After starting the server, access these endpoints:
   <Tabs.Tab>
 Open in browser:
 ```
+
 http://127.0.0.1:8765/
-```
+
+````
   </Tabs.Tab>
   <Tabs.Tab>
 Test with cURL:
 ```bash
 curl http://127.0.0.1:8765/
-```
+````
+
   </Tabs.Tab>
   <Tabs.Tab>
 Connect WebSocket:
@@ -279,7 +296,9 @@ Connect WebSocket:
 npm install -g wscat
 
 # Connect
+
 wscat -c ws://127.0.0.1:8765/ws
+
 ```
   </Tabs.Tab>
 </Tabs>uild image
@@ -288,6 +307,7 @@ docker build -t blitz:latest .
 # Run container
 docker run -p 8765:8765 --env-file .env blitz:latest
 ```
+
   </Tabs.Tab>
 </Tabs>un with hot reload (requires go installed)
 go run main.go
@@ -332,12 +352,12 @@ graph TB
     subgraph "HTTP Server :8765"
         Server[HTTP Server<br/>127.0.0.1:8765]
     end
-    
+
     subgraph "Routes"
         RouteHome[GET /<br/>Static Files]
         RouteWS[/ws<br/>WebSocket]
     end
-    
+
     subgraph "Frontend"
 ## 🐛 Error Scenarios
 
@@ -354,8 +374,10 @@ Common errors and solutions
 **Impact**: Server may fail to start if vars not set
 
 ```
+
 Warning: .env file not found, using system environment variables
-```
+
+````
   </Tabs.Tab>
   <Tabs.Tab>
 **Fix**:
@@ -386,7 +408,8 @@ Follow these guidelines for optimal development
 | ❌ Run as root | Security vulnerability |
 | ❌ Expose to public internet without security | Attack surface |
 | ❌ Hardcode configuration | Inflexibility |dy in use
-```
+````
+
   </Tabs.Tab>
   <Tabs.Tab>
 **Fix Option 1** - Kill process:
@@ -395,10 +418,12 @@ lsof -ti:8765 | xargs kill -9
 ```
 
 **Fix Option 2** - Change port:
+
 ```bash
 # Edit .env
 LOCAL_HOST_PORT=8766
 ```
+
   </Tabs.Tab>
 </Tabs>
 
@@ -409,6 +434,7 @@ LOCAL_HOST_PORT=8766
 **Error**: Browser shows 404 or blank page
 
 **Cause**: `temp/web/index.html` doesn't exist
+
   </Tabs.Tab>
   <Tabs.Tab>
 **Fix**:
@@ -417,8 +443,11 @@ LOCAL_HOST_PORT=8766
 ls -la temp/web/index.html
 
 # Create if missing
+
 mkdir -p temp/web
+
 # ... create index.html
+
 ```
   </Tabs.Tab>
 </Tabs>,color:#fff
