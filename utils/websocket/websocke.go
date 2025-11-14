@@ -12,22 +12,20 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	}}
-var Conn *websocket.Conn
 
 func CreateWebSocketConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	conn, err := upgrader.Upgrade(w, r, nil)
-	Conn = conn
 	if err != nil {
 		log.Println("WebSocket upgrade error:", err)
 		return nil, err
 	}
-	log.Println("WebSocket Connection established for :=", Conn.LocalAddr())
-	return Conn, nil
+	log.Println("WebSocket Connection established for :=", conn.LocalAddr())
+	return conn, nil
 }
 
-func CloseWebSocketConnection() {
-	if Conn != nil {
-		err := Conn.Close()
+func CloseWebSocketConnection(conn *websocket.Conn) {
+	if conn != nil {
+		err := conn.Close()
 		if err != nil {
 			log.Println("Error closing WebSocket Connection:", err)
 		} else {
@@ -38,13 +36,13 @@ func CloseWebSocketConnection() {
 	}
 }
 
-func SendWebSocketMessage(msg models.ServerResponse) error {
-	if Conn == nil {
+func SendWebSocketMessage(msg models.ServerResponse, conn *websocket.Conn) error {
+	if conn == nil {
 		log.Println("WebSocket Connection is nil, cannot send message")
 		return nil
 	}
 
-	err := Conn.WriteJSON(msg)
+	err := conn.WriteJSON(msg)
 	if err != nil {
 		log.Println("Error sending message over WebSocket:", err)
 		return err
@@ -53,8 +51,8 @@ func SendWebSocketMessage(msg models.ServerResponse) error {
 	return nil
 }
 
-func IsWebSocketConnected() bool {
-	if Conn == nil {
+func IsWebSocketConnected(conn *websocket.Conn) bool {
+	if conn == nil {
 		log.Println("WebSocket Connection is nil")
 		return false
 	}

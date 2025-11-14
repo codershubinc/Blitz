@@ -17,7 +17,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 	msg := models.ServerResponse{
 		Message: "Welcome to the WebSocket server!",
 	}
-	if err := SendWebSocketMessage(msg); err != nil {
+	if err := SendWebSocketMessage(msg, conn); err != nil {
 		http.Error(res, "Failed to send welcome message", http.StatusInternalServerError)
 		return
 	}
@@ -32,7 +32,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 	go func() {
 		for response := range chh {
 			if err := conn.WriteJSON(response); err != nil {
-				break
+				continue
 			}
 		}
 	}()
@@ -41,7 +41,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 	for {
 		var msg map[string]interface{}
 		if err := conn.ReadJSON(&msg); err != nil {
-			break
+			continue
 		}
 		log.Printf("Received message: %+v\n", msg)
 

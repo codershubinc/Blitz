@@ -1,4 +1,4 @@
-package websocket 
+package websocket
 
 import (
 	"Blitz/models"
@@ -21,8 +21,8 @@ func CreateChannel() chan models.ServerResponse {
 }
 
 func GetChannel() chan models.ServerResponse {
-	mu.Lock()
-	defer mu.Unlock()
+	mu.RLock()
+	defer mu.RUnlock()
 	if sharedChannel == nil {
 		sharedChannel = make(chan models.ServerResponse)
 		log.Println("Channel created inside GetChannel")
@@ -43,15 +43,19 @@ func CloseChannel() {
 	}
 }
 
-func WriteChannelMessage(msg models.ServerResponse , ) {
+func WriteChannelMessage(msg models.ServerResponse) {
+	mu.RLock()
+	ch := sharedChannel
+	defer mu.RUnlock()
 
-	if sharedChannel == nil {
+
+	if ch == nil {
 		log.Println("Channel is nil, cannot send message")
 		return
 	}
 
 	select {
-	case sharedChannel <- msg:
+	case ch <- msg:
 		// log.Println("Message sent to channel:", msg)
 	default:
 		log.Println("Channel is full, message not sent:", msg)
