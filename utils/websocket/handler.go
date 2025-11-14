@@ -2,7 +2,8 @@ package websocket
 
 import (
 	"Blitz/models"
-	"net/http" 
+	"log"
+	"net/http"
 )
 
 func Handle(res http.ResponseWriter, req *http.Request) {
@@ -35,7 +36,6 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}()
- 
 
 	// Reader goroutine - receives messages from client
 	for {
@@ -43,6 +43,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 		if err := conn.ReadJSON(&msg); err != nil {
 			break
 		}
+		log.Printf("Received message: %+v\n", msg)
 
 		// Handle ping/pong
 		HandlePingPong(conn, msg)

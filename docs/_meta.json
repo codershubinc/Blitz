@@ -1,0 +1,14 @@
+{
+  "MAIN": {
+    "title": "Main Application",
+    "icon": "🚀"
+  },
+  "POLLER": {
+    "title": "Poller Package",
+    "icon": "⏱️"
+  },
+  "WEBSOCKET": {
+    "title": "WebSocket Package",
+    "icon": "🔌"
+  }
+}
