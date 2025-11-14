@@ -7,23 +7,30 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using system environment variables")
+	}
+
 	fmt.Println("Hello Blitz Server ...")
 
 	// Setup HTTP routes
 	http.HandleFunc("/ws", websocket.Handle)
 	http.HandleFunc("/", serveHome)
 
-	go  poller.Handle()
+	go poller.Handle()
 
 	// Start the server (this blocks forever)
 	fmt.Println("Starting server on http://0.0.0.0:8765")
 	fmt.Println("WebSocket endpoint: ws://localhost:8765/ws")
 	fmt.Println("Press Ctrl+C to stop the server")
 	localAddr := os.Getenv("LOCAL_HOST_IP") + ":" + os.Getenv("LOCAL_HOST_PORT")
-	fmt.Println("lo" , localAddr)
+	fmt.Println("lo", localAddr)
 
 	if err := http.ListenAndServe(localAddr, nil); err != nil {
 		log.Fatal("Server error:", err)

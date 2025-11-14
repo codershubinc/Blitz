@@ -52,7 +52,7 @@ func WriteChannelMessage(msg models.ServerResponse , ) {
 
 	select {
 	case sharedChannel <- msg:
-		log.Println("Message sent to channel:", msg)
+		// log.Println("Message sent to channel:", msg)
 	default:
 		log.Println("Channel is full, message not sent:", msg)
 	}
