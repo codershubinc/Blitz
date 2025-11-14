@@ -34,12 +34,17 @@ func GetPlayerInfo() (MediaInfo, error) {
 	// Make sure we have all 8 parts (if not, player might not be running)
 	if len(parts) < 8 {
 		return MediaInfo{}, nil
-	} 
+	}
+	// HandleArtworkRequest(strings.TrimSpace(parts[1]))
+	artwork, err := HandleArtworkRequest(strings.TrimSpace(parts[1]))
+	if err != nil {
+		artwork = ""
+	}
 
 	// Parse each part
 	mediaInfo := MediaInfo{
 		Title:    strings.TrimSpace(parts[0]),
-		Artwork:  strings.TrimSpace(parts[1]),
+		Artwork:  artwork,
 		Artist:   strings.TrimSpace(parts[2]),
 		Album:    strings.TrimSpace(parts[3]),
 		Position: strings.TrimSpace(parts[4]),
@@ -50,7 +55,6 @@ func GetPlayerInfo() (MediaInfo, error) {
 
 	return mediaInfo, nil
 }
-
 
 func GetAllActivePlayers() ([]string, error) {
 	// Run playerctl to get the list of all active players

@@ -43,7 +43,7 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 		for response := range client.Send {
 			if err := conn.WriteJSON(response); err != nil {
 				log.Printf("Error writing to client %s: %v", client.ID, err)
-				return
+				continue
 			}
 		}
 	}()
@@ -60,7 +60,5 @@ func Handle(res http.ResponseWriter, req *http.Request) {
 		// Handle ping/pong
 		HandlePingPong(conn, msg)
 	}
-
-	// Wait for writer to finish
 	<-writerDone
 }
